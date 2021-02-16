@@ -1,9 +1,12 @@
 import sqlite3
 from DB_con import DB_con
 import pdb
-class Kurs:
 
-    def __init__(self, db_conn, CourseName, Year, Contact_Name, Notes):
+
+class Course:
+
+    def __init__(self, db_conn, CourseName, Year, Contact_Name, Notes, CourseID):
+        self.CourseID = CourseID
         self.CourseName = CourseName
         self.Year = Year
         #self.StudentNames = StudentNames
@@ -19,25 +22,26 @@ class Kurs:
         self.db_conn = db_conn
         self.db_conn.CreateTableAllCourses()
 
-
-        sql = f"SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ? AND Notes = ?"
-        params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
-        #pdb.set_trace()
-        if len(self.db_conn.GetFromDatabase(sql, params)) == 0:
-            #pdb.set_trace()
-            ## Trage den Kurs in die Tabelle Courses ein. In dieser Tabelle sind alle Kurse enthalten
-            sql = "INSERT INTO Courses (CourseID, CourseName, Year, ContactName, Notes) VALUES (Null, ?, ?, ?, ?)"
+        if self.CourseID != -1:
+            sql = f"SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ? AND Notes = ?"
             params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
-            db_conn.addToDatabase(sql, params)
+            #pdb.set_trace()
+            if len(self.db_conn.GetFromDatabase(sql, params)) == 0:
+                #pdb.set_trace()
+                ## Trage den Kurs in die Tabelle Courses ein. In dieser Tabelle sind alle Kurse enthalten
+                sql = "INSERT INTO Courses (CourseID, CourseName, Year, ContactName, Notes) VALUES (Null, ?, ?, ?, ?)"
+                params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
+                db_conn.addToDatabase(sql, params)
 
-            ## Bestimme die zugewiesene ID des Kurses
-            sql = "SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ? AND Notes = ?"
-            Ausgabe = db_conn.GetFromDatabase(sql, params)
-            CourseID = Ausgabe[0]
-            db_conn.CreateTableSingleCourse(self.CourseName, CourseID)
+                ## Bestimme die zugewiesene ID des Kurses
+                sql = "SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ? AND Notes = ?"
+                Ausgabe = db_conn.GetFromDatabase(sql, params)
+                CourseID = Ausgabe[0]
+                db_conn.CreateTableSingleCourse(self.CourseName, CourseID)
+            else:
+                print(f'Kurs {CourseName} ist schon vorhanden!')
         else:
-            print(f'Kurs {CourseName} ist schon vorhanden!')
-        del self.db_conn
+            pass
         # self.conn = sqlite3.connect("database.db")
         # self.c = self.conn.cursor()
         #self.StudentNames = []

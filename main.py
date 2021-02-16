@@ -75,7 +75,7 @@ root = Tk()
 #pdb.set_trace()
 
 welcome_text = Label(root, text='Schulmanager').pack()
-AddCourse_Button = Button(root, text='Kurse verwalten', command=lambda: ManageCourses( db_connection)).pack()
+AddCourse_Button = Button(root, text='Kurse verwalten', command=lambda: ManageCourses(db_connection)).pack()
 #AddGrade_Button = Button(root, text='Note hinzufügen', command=add_grade).pack()
 ShowCalender_Button = Button(root, text='Kalender ansehen').pack()
 AddCalenderEntry_Button = Button(root, text='Kalendereintrag hinzufügen').pack()

@@ -80,29 +80,32 @@ class CourseInfo:
 
 class CoursesDropdown_menu:
 
-
     def __init__(self, db_connection, root):
         self.root = root
         sql = f"""SELECT CourseID, CourseName FROM Courses"""
         #pdb.set_trace()
         Courses_list = db_connection.GetFromDatabase(sql, ())
         CourseString_list = []
-        for Course_Tupel in Course_list:
-            CourseString_list.append(f"{CourseTupel[0]}, {CourseTupel[1]}")
+        for Course_Tupel in Courses_list:
+            CourseString_list.append(f"{Course_Tupel[0]}, {Course_Tupel[1]}")
 
         CourseString_list.append('Neuer Kurs')
         # Create Dropdown-Widget with the CorseNames
         clicked = StringVar()
-        clicked.set(Courses_list[0])
+        clicked.set(CourseString_list[0])
         widget_dropdown_CourseNames = OptionMenu(self.root, clicked, *CourseString_list)
         widget_dropdown_CourseNames.pack()
         widget_dropdown_CourseNames.bind("<ButtonRelease-1>",lambda event: self.InspectDropdownValue(event))
         self.CourseIDName = clicked.get()
 
+        self.NewCourse_Widgets = ButtonsNewCourseEntry(self.root, db_connection)
         self.db_connection = db_connection
 
     def InspectDropdownValue(self, event):
         if self.CourseIDName != 'Neuer Kurs':
+            # if the Buttons for new Course are shown, hide them:
+            if self.NewCourse_Widgets.Check() is True:
+                self.NewCourse_Widgets.Hide()
             #pdb.set_trace()
             # Get CourseID:
             CourseID_pos = self.CourseIDName.find(',')
@@ -111,27 +114,65 @@ class CoursesDropdown_menu:
             sql_get_courseInfo = f"""SELECT * FROM Courses WHERE CourseID = ?"""
             params = (CourseID,)
             Get_CourseInfo = self.db_connection.GetFromDatabase(sql_get_courseInfo, params)
+            pdb.set_trace()
             self.SelectedCourse = Course(self.db_connection, Get_CourseInfo[1], Get_CourseInfo[2], Get_CourseInfo[3], Get_CourseInfo[4], Get_CourseInfo[0])
             courseInfo = CourseInfo(self.db_connection, self.CourseName)
             widget_list = self.root.slaves()
         else:
-            self.NewCourseName = StringVar()
-            self.NewCourseName.set('Kursname')
-            self.Entry_CourseName = Entry(self.root, textvariable=self.NewCourseName).pack()
 
-            self.NewCourseYear = StringVar()
-            self.NewCourseYear.set('Jahrgang')
-            self.Entry_Year = Entry(self.root, textvariable=self.NewCourseYear).pack()
+            if self.NewCourse_Widgets.Check() is True:
+                pass
+            else:
+                self.NewCourse_Widgets.Show()
 
-            self.NewCourseContact = StringVar()
-            self.NewCourseContact.set('Kontaktperson')
-            self.Entry_CourseName = Entry(self.root, textvariable=self.NewCourseContact).pack()
 
-            self.NewCourseNotes = StringVar()
-            self.NewCourseNotes.set('Notizen')
-            self.Entry_CourseName = Entry(self.root, textvariable=self.NewCourseNotes).pack()
 
-            self.SumbmitButton = Button(self.root, text='Erstellen', command=self.SubmitNewCourse).pack()
+class ButtonsNewCourseEntry:
+
+    def __init__(self, root, db_connection):
+
+        self.root = root
+        self.db_connection = db_connection
+
+        self.NewCourseName = StringVar()
+        self.NewCourseName.set('Kursname')
+        self.Entry_CourseName = Entry(self.root, textvariable=self.NewCourseName)
+
+        self.NewCourseYear = StringVar()
+        self.NewCourseYear.set('Jahrgang')
+        self.Entry_CourseYear = Entry(self.root, textvariable=self.NewCourseYear)
+
+        self.NewCourseContact = StringVar()
+        self.NewCourseContact.set('Kontaktperson')
+        self.Entry_CourseContact = Entry(self.root, textvariable=self.NewCourseContact)
+
+        self.NewCourseNotes = StringVar()
+        self.NewCourseNotes.set('Notizen')
+        self.Entry_CourseNotes = Entry(self.root, textvariable=self.NewCourseNotes)
+
+        self.SubmitButton = Button(self.root, text='Erstellen', command=self.SubmitNewCourse)
+
+
+
+    def Show(self):
+
+        self.Entry_CourseName.pack()
+        self.Entry_CourseYear.pack()
+        self.Entry_CourseContact.pack()
+        self.Entry_CourseNotes.pack()
+        self.SubmitButton.pack()
+
+    def Hide(self):
+
+        self.Entry_CourseName.pack_forget()
+        self.Entry_CourseYear.pack_forget()
+        self.Entry_CourseNotes.pack_forget()
+        self.Entry_CourseContact.pack_forget()
+        self.SubmitButton.pack_forget()
+
+    def Check(self):
+        ## only check for one Entry Field:
+        return self.Entry_CourseName.winfo_ismapped()
 
     def SubmitNewCourse(self):
 
@@ -147,23 +188,30 @@ class CoursesDropdown_menu:
         user_return = tkinter.messagebox.askyesno(title='Kurs eintragen?', message=msg)
         #pdb.set_trace()
         if user_return == True:
-            self.SelectedCourse = Kurs(db_connection, CourseName, Year, Contact, Notes)
+            # set CourseId -1 if its a new Course
+            self.SelectedCourse = Course(self.db_connection, CourseName, Year, Contact, Notes, -1)
 
-        self.Entry_CourseName.Remove()
-        self.Entry_Year.Remove()
-        self.Entry_CourseName.Remove()
-        self.SumbmitButton.Remove()
-        Label(self.root, text=f"Möchtest Du Schüler zum Kurs {self.CourseName} hinzufügen?").pack()
-        Button(self.root, text=f"Teilnehmende hinzufügen", command=self.AddParticipant).pack()
-        Button(self.root, text="Zurück zum hauptmenü", command=self.root.Destroy())
+        self.Hide()
 
-    def AddParticipant(self):
+        Label(self.root, text=f"Möchtest Du Schüler zum Kurs {self.NewCourseName} hinzufügen?").pack()
 
+        ## Create an Instance of AddParticipant
+        #self.participant_window =
+        ## work on this again!!
+
+        Button(self.root, text=f"Teilnehmende hinzufügen", command=lambda: AddParticipant(self.db_connection)).pack()
+        Button(self.root, text="Zurück zum Hauptmenü", command=self.root.Destroy)
+
+class AddParticipant:
+
+    def __init__(self, db_connection):
+
+        self.db_connection = db_connection
         self.AddParticipant_window = Toplevel()
-        Label(AddParticipant_window, text="Es können Teilnehmende, die schon in der Datenbank sind, in den Kurs eingetragen werden, oder neue Teilnehmende in das System aufgenommenw werden.").pack()
+        Label(self.AddParticipant_window, text="Es können Teilnehmende, die schon in der Datenbank sind, in den Kurs eingetragen werden, oder neue Teilnehmende in das System aufgenommenw werden.").pack()
 
-        sql_GET_participants = "SELECT Students.StudentID, Students.forname, Students.surname FROM Students"
-        participants_list = self.db_database.GetFromDatabase(sql_GET_participants, ())
+        sql_GET_participants = "SELECT Students.id, Students.forname, Students.surname FROM Students"
+        participants_list = self.db_connection.GetFromDatabase(sql_GET_participants, ())
         part_string_list = []
         for partTupel in participants_list:
             part_string_list.append(f"{partTupel[0]}, {partTupel[1]}, {partTupel[2]}")
@@ -173,41 +221,68 @@ class CoursesDropdown_menu:
         widget_dropdown_Participants = OptionMenu(self.AddParticipant_window, self.participant_shown, *part_string_list).pack()
         widget_dropdown_Participants.bind("<ButtonRelease-1>",lambda event: self.InspectParticipantsDropDown(event))
 
+        self.NewPartForname = StringVar()
+        self.NewPartForname = self.NewPartForname.set('Vorname')
+        self.FornamePartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartForname)
+
+        self.NewPartSurname = StringVar()
+        self.NewPartSurname = self.NewPartSurname.set('Nachname')
+        self.SurnamePartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartSurname)
+
+        self.NewPartYear = StringVar()
+        self.NewPartYear = self.NewPartYear.set('Jahrgang')
+        self.YearPartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartYear)
+
+        self.NewPartTutor = StringVar()
+        self.NewPartTutor = self.NewPartTutor.set('Tutor')
+        self.TutorPartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartTutor)
+
+        self.SubmitNewParticipant = Button(self.AddParticipant_window, text='Eintragen', command=self.InspectNewParticipant_Entries)
+
+
+
+    def Show_Widgets(self):
+        self.FornamePartEntry.pack()
+        self.SurnamePartEntry.pack()
+        self.YearPartEntry.pack()
+        self.TutorPartEntry.pack()
+        self.SubmitNewParticipant.pack()
+
+    def Hide_Widgets(self):
+        self.FornamePartEntry.pack_forget()
+        self.SurnamePartEntry.pack_forget()
+        self.YearPartEntry.pack_forget()
+        self.TutorPartEntry.pack_forget()
+        self.SubmitNewParticipant.pack_forget()
+
+    def Check_Widgets(self):
+        return self.FornamePartEntry.winfo_ismapped()
+
+    def InspectNewParticipant_Entries(self):
+
+        msg = f"""Soll der Kurs so eingetragen werden?
+        \n Name: {self.FornamePartEntry.get()} {self.SurnamePartEntry.get()}
+        \n Klassenstufe: {self.YearPartEntry.get()}
+        \n Tutor: {self.TutorPartEntry.get()}"""
+        user_return = tkinter.messagebox.askyesno(title='Teilnehmer erstellen & eintragen?', message=msg)
+        if user_return is True:
+            self.AddedStudent = Student(self.NewPartForname, self.NewPartSurname, self.NewPartYear, self.NewPartTutor)
+            self.SelectedCourse.AddStudent(self.AddedStudent.Get_ID())
+
     def InspectParticipantsDropDown(self):
 
         if self.participant_shown.get() == 'Teilnehmenden hinzufügen':
-
-            self.NewPartForname = StringVar()
-            self.NewPartForname = self.NewPartForname.set('Vorname')
-            self.FornamePartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartForname).pack()
-
-            self.NewPartSurname = StringVar()
-            self.NewPartSurname = self.NewPartSurname.set('Nachname')
-            self.SurnamePartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartSurname).pack()
-
-            self.NewPartYear = StringVar()
-            self.NewPartYear = self.NewPartYear.set('Jahrgang')
-            self.YearPartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartYear).pack()
-
-            self.NewPartTutor = StringVar()
-            self.NewPartTutor = self.NewPartTutor.set('Tutor')
-            self.TutorPartEntry = Entry(self.AddParticipant_window, textvariable=self.NewPartTutor).pack()
-
-            self.AddedStudent = Student(self.NewPartForname, self.NewPartSurname, self.NewPartYear, self.NewPartTutor)
-
-            self.SelectedCourse.AddStudent(self.AddedStudent.Get_ID())
-
+            if Check_Widgets is False:
+                self.Show_Widgets()
         else:
+            if Check_Widgets is True:
+                self.Hide_Widgets()
             # If a already existent participant is selected, he gets add to the Course
-
-
             # Decompose String to Tupel
             dec_string = self.participant_shown
-
             selection = dec_string[0:dec_string.find(',')]
-            params = (selection,)
 
-            sql_Get_SelectedPartInfo = f"""SELECT * FROM Students WHERE Students.StudentID = ?"""
+
 
 
 def ManageCourses(db_connection):
