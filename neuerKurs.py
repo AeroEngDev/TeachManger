@@ -22,26 +22,24 @@ class Course:
         self.db_conn = db_conn
         self.db_conn.CreateTableAllCourses()
 
-        if self.CourseID != -1:
-            sql = f"SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ? AND Notes = ?"
-            params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
+        sql = f"SELECT course_id FROM Courses WHERE course_name = ? AND year = ? AND contact_name = ? AND notes = ?"
+        params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
+        #pdb.set_trace()
+        if len(self.db_conn.GetFromDatabase(sql, params)) == 0:
             #pdb.set_trace()
-            if len(self.db_conn.GetFromDatabase(sql, params)) == 0:
-                #pdb.set_trace()
-                ## Trage den Kurs in die Tabelle Courses ein. In dieser Tabelle sind alle Kurse enthalten
-                sql = "INSERT INTO Courses (CourseID, CourseName, Year, ContactName, Notes) VALUES (Null, ?, ?, ?, ?)"
-                params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
-                db_conn.addToDatabase(sql, params)
+            ## Trage den Kurs in die Tabelle Courses ein. In dieser Tabelle sind alle Kurse enthalten
+            sql = "INSERT INTO Courses (course_id, course_name, year, contact_name, notes) VALUES (Null, ?, ?, ?, ?)"
+            params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
+            db_conn.addToDatabase(sql, params)
 
-                ## Bestimme die zugewiesene ID des Kurses
-                sql = "SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ? AND Notes = ?"
-                Ausgabe = db_conn.GetFromDatabase(sql, params)
-                CourseID = Ausgabe[0]
-                db_conn.CreateTableSingleCourse(self.CourseName, CourseID)
-            else:
-                print(f'Kurs {CourseName} ist schon vorhanden!')
+            ## Bestimme die zugewiesene ID des Kurses
+            sql = "SELECT course_id FROM Courses WHERE course_name = ? AND year = ? AND contact_name = ? AND notes = ?"
+            Ausgabe = db_conn.GetFromDatabase(sql, params)
+            self.CourseID = Ausgabe[0][0]
+            db_conn.CreateTableSingleCourse(self.CourseID)
         else:
-            pass
+            print(f'Kurs {CourseName} ist schon vorhanden!')
+
         # self.conn = sqlite3.connect("database.db")
         # self.c = self.conn.cursor()
         #self.StudentNames = []
@@ -51,10 +49,38 @@ class Course:
 
     # def __del__(self):
     #     del self.db_conn
+    def GET_gradeNames(self):
+        sql = "SELECT gradeNames.grade1_Name"
+        for i in range(2, self.GET_gradeCount()+1):
+            sql = sql+f", gradeNames.grade{i}_Name"
+
+        sql = sql + " FROM gradeNames, Courses WHERE gradeNames.CourseID IN(SELECT Courses.CourseID WHERE Courses.CourseName = ? AND Courses.Year = ? AND Courses.ContactName = ? AND Courses.Notes = ?)"
+        params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
+        gradeNames_list = self.db_conn.GetFromDatabase(sql, params)
+        #pdb.set_trace()
+        return gradeNames_list[0]
+
+    def GET_gradeCount(self):
+        sql = "SELECT gradeStruct.gradeCount FROM gradeStruct, Courses WHERE gradeStruct.CourseID IN(SELECT Courses.CourseID WHERE Courses.CourseName = ? AND Courses.Year = ? AND Courses.ContactName = ? AND Courses.Notes = ?)"
+        params = (self.CourseName, self.Year, self.Contact_Name, self.Notes)
+        gradeCount_list = self.db_conn.GetFromDatabase(sql, params)
+        return gradeCount_list[0][0]
+    def GET_CourseName(self):
+        return self.CourseName
+
+    def InsertIntoGradeStruct(self):
+        #sql_get_CourseID = f"SELECT CourseID FROM Courses WHERE "
+
+        sql_INSERT_gradeStruct = f"INSERT INTO gradeStruct (CourseID, gradeCount, grade1_weight, grade2_weight) VALUES (?, ?, ?, ?)"
+        params = (self.CourseID, 2, 0.333, 0.666)
+        self.db_conn.addToDatabase(sql_INSERT_gradeStruct, params)
+        sql_INSERT_gradeNames = "INSERT INTO gradeNames (CourseID, grade1_Name, grade2_Name) VALUES (?, ?, ?)"
+        params = (self.CourseID, 'Allgemeiner Teil', 'Schriftlich')
+        self.db_conn.addToDatabase(sql_INSERT_gradeNames, params)
 
     def Get_CourseID(self):
         self.db_conn = DB_con()
-        sql = f"SELECT CourseID FROM Courses WHERE CourseName = ? AND Year = ? AND ContactName = ?"
+        sql = f"SELECT course_id FROM Courses WHERE course_name = ? AND year = ? AND contact_name = ?"
         params = (self.CourseName, self.Year, self.Contact_Name)
         CourseID_list = self.db_conn.GetFromDatabase(sql, params)
         return CourseID_list[0][0]
@@ -62,11 +88,13 @@ class Course:
     def AddStudent(self, studentID):
         self.db_conn = DB_con()
         # Überprüfe, ob Studierender schon vorhanden ist:
-        sql = f"SELECT StudentID FROM [{self.CourseName}] WHERE StudentID = ?"
-        results_studentID = self.db_conn.GetFromDatabase(sql, studentID)
+        sql = f"SELECT student_id FROM [{self.CourseName}] WHERE student_id = ?"
+        #pdb.set_trace()
+        results_studentID = self.db_conn.GetFromDatabase(sql, (studentID,))
+        #pdb.set_trace()
         if len(results_studentID) == 0:
-            sql = f"INSERT INTO [{self.CourseName}] (StudentID) VALUES (?)"
-            self.db_conn.addToDatabase(sql, studentID)
+            sql = f"INSERT INTO [{self.Get_CourseID()}] (student_id) VALUES (?)"
+            self.db_conn.addToDatabase(sql, (studentID,))
         else:
             print('Student ist schon in diesem Kurs eingetragen!')
         # self.c.execute(sql, params)
@@ -223,6 +251,7 @@ class Course:
 class Student:
 
     def __init__(self, forname, surname, SchoolYear, Tutor):
+
         self.forname = forname
         self.surname = surname
         self.SchoolYear = SchoolYear
@@ -230,14 +259,10 @@ class Student:
 
         self.db_conn = DB_con()
         self.db_conn.CreateStudentsTable()
-        # self.conn = sqlite3.connect("database.db")
-        # self.c = self.conn.cursor()
 
-    def ShowStudent(self):
-        ausgabe = (self.forname, self.surname, self.SchoolYear)
-        return ausgabe
-    def AddStudent(self):
-        sql = "SELECT forname, surname, SchoolYear FROM Students WHERE forname = ? AND surname = ? AND SchoolYear = ? AND Tutor = ?"
+        ## its better to check the id, than all the other entries!!
+
+        sql = "SELECT forname, surname, school_year FROM Students WHERE forname = ? AND surname = ? AND school_year = ? AND tutor = ?"
         params = (self.forname, self.surname, self.SchoolYear, self.Tutor)
         Ausgabe = self.db_conn.GetFromDatabase(sql, params)
         if len(Ausgabe) == 0:
@@ -247,11 +272,21 @@ class Student:
             # self.conn.commit()
         else:
             print('Student ist schon im System vorhanden!')
+        # self.conn = sqlite3.connect("database.db")
+        # self.c = self.conn.cursor()
+
+    def ShowStudent(self):
+        ausgabe = (self.forname, self.surname, self.SchoolYear)
+        return ausgabe
+    #def AddStudent(self):
+
 
     def Get_ID(self):
-       sql = "SELECT ID FROM Students WHERE forname = ? AND surname = ? AND SchoolYear = ?"
+       sql = "SELECT id FROM Students WHERE forname = ? AND surname = ? AND SchoolYear = ?"
        params = (self.forname, self.surname, self.SchoolYear)
        ausgabe = self.db_conn.GetFromDatabase(sql, params)
+       #pdb.set_trace()
        #self.c.execute(sql, params)
-       studentID = ausgabe[0]
+       studentID = ausgabe[0][0]
+       #pdb.set_trace()
        return studentID
