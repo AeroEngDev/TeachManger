@@ -37,7 +37,7 @@ class DB_con:
         course_id INTEGER,
         grade_Name STRING,
         grade_weight FLOAT,
-        child_of INTEGER,
+        child_of INTEGER NOT NULL DEFAULT '1',
         PRIMARY KEY (grade_id),
         FOREIGN KEY(course_id) REFERENCES Courses(course_id))
         """

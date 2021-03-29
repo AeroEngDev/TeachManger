@@ -1,5 +1,5 @@
 import numpy as np
-from tkinter import *
+import tkinter as tk
 import tkinter.messagebox
 import re as re
 
@@ -28,8 +28,7 @@ class CourseInfo:
         self.PieChart_obj = PieChart(self.PieFrame, self.db_connection, self.SelectedCourse_obj, self)
         self.PieChart_obj.init_event_handlers()
 
-        CourseMaintance = MaintainCourses_Menu(self.Frame_Obj, db_connection, self.SelectedCourse_obj, self.edited_text, self.entryWidget_list, self)
-
+        MaintainCourses_Menu(self.Frame_Obj, db_connection, self.SelectedCourse_obj, self.edited_text, self.entryWidget_list, self)
 
     def GET_CourseInfo(self):
 
@@ -38,39 +37,26 @@ class CourseInfo:
         student_ids_in_course = self.db_connection.GetFromDatabase(sql_get_course_content, (self.SelectedCourse_obj.Get_CourseID(),))
         student_ids_in_course = list(dict.fromkeys(student_ids_in_course))
 
-        ## get the grades out of the junktion table
+        # get the grades out of the junktion table
         grades_of_students_in_course = []
         for student in student_ids_in_course:
             sql_get_grades_for_id = "SELECT stud_courses_grades.grade_id, grade_value, grade_name, grade_weight  FROM stud_courses_grades INNER JOIN Grades ON Grades.grade_id = stud_courses_grades.grade_id WHERE student_id = ?"
             grades_for_student_id = self.db_connection.GetFromDatabase(sql_get_grades_for_id, (student[0],))
             if grades_for_student_id != []:
                 grades_of_students_in_course.append(grades_for_student_id[0])
-        #pdb.set_trace()
-
-        ## get the weights and the grade names
+        # get the weights and the grade names
         grade_names = {}
         grade_weights = {}
-#        if len(grades_of_students_in_course) > 0:
-            #student = student_ids_in_course[0]
-
         sql_get_weight_names = "SELECT grade_id, grade_name, grade_weight FROM Grades WHERE course_id = ?"
         grade_info_course = self.db_connection.GetFromDatabase(sql_get_weight_names, (self.SelectedCourse_obj.Get_CourseID(),))
-            #pdb.set_trace()
         for row in grade_info_course:
-                #pdb.set_trace()
             grade_names[row[0]] = row[1]
-
-                #grade_names.append((row[0], row[1]))
-                #grade_names[row[0]] = row[2]
-
             grade_weights[row[0]] = row[2]
-
 
         self.student_ids_in_course = student_ids_in_course
         self.grades_of_students_in_course = grades_of_students_in_course
         self.grade_names = grade_names
         self.grade_weights = grade_weights
-        #pdb.set_trace()
         # build the grid of entries
         self.edited_text, self.entryWidget_list = self.build_grid()
 
@@ -105,27 +91,23 @@ class CourseInfo:
         sql_get_grade_info = "SELECT grade_id, grade_name, grade_weight FROM Grades WHERE course_id = ?"
         get_grade_info = self.db_connection.GetFromDatabase(sql_get_grade_info, (self.SelectedCourse_obj.Get_CourseID(),))
 
-        rows = len(self.grades_of_students_in_course)
+        #rows = len(self.grades_of_students_in_course)
 
         #pdb.set_trace()
         self.entryWidget_list = []
         self.edited_text = []
         self.column_desc_list = []
-        self.column_desc_list.append(Label(self.root, text='Student ID'))
+        self.column_desc_list.append(tk.Label(self.root, text='Student ID'))
         self.column_desc_list[0].grid(row=0, column=0)
-        self.column_desc_list.append(Label(self.root, text='Vorname'))
+        self.column_desc_list.append(tk.Label(self.root, text='Vorname'))
         #Label_forname = Label(self.root, text='Vorname')
         self.column_desc_list[1].grid(row=0, column=1)
-        self.column_desc_list.append(Label(self.root, text='Nachname'))
+        self.column_desc_list.append(tk.Label(self.root, text='Nachname'))
         self.column_desc_list[2].grid(row=0, column=2)
 
-
-
-
-        #pdb.set_trace()
         i = 1
         for grade_id, grade_name in self.grade_names.items():
-            self.column_desc_list.append(Label(self.root, text=f"{grade_id}, {grade_name}"))
+            self.column_desc_list.append(tk.Label(self.root, text=f"{grade_id}, {grade_name}"))
 
             self.column_desc_list[2+i].grid(row=0, column=2+i)
             #if grade_id in
@@ -139,26 +121,26 @@ class CourseInfo:
             self.edited_text_set = []
             self.entryWidget_list_set = []
             # Build the label field for the student id
-            self.edited_text_set.append(StringVar())
+            self.edited_text_set.append(tk.StringVar())
             self.edited_text_set[0].set(student[0])
-            self.entryWidget_list_set.append(Label(self.root, text=self.edited_text_set[0].get()))
+            self.entryWidget_list_set.append(tk.Label(self.root, text=self.edited_text_set[0].get()))
             self.entryWidget_list_set[0].grid(column=0, row=i+1)
 
             # build the entry field for the forname
-            self.edited_text_set.append(StringVar())
+            self.edited_text_set.append(tk.StringVar())
             self.edited_text_set[1].set(student[1])
-            self.entryWidget_list_set.append(Entry(self.root, textvariable=self.edited_text_set[1]))
+            self.entryWidget_list_set.append(tk.Entry(self.root, textvariable=self.edited_text_set[1]))
             self.entryWidget_list_set[1].grid(column=1, row=i+1)
 
             # build the entry field for the surname
-            self.edited_text_set.append(StringVar())
+            self.edited_text_set.append(tk.StringVar())
             self.edited_text_set[2].set(student[2])
-            self.entryWidget_list_set.append(Entry(self.root, textvariable=self.edited_text_set[2]))
+            self.entryWidget_list_set.append(tk.Entry(self.root, textvariable=self.edited_text_set[2]))
             self.entryWidget_list_set[2].grid(column=2, row=i+1)
             j = 1
             #pdb.set_trace()
             for grade_id, grade_name in self.grade_names.items():
-                self.edited_text_set.append(StringVar())
+                self.edited_text_set.append(tk.StringVar())
                 # insert grade for the grade_id
                 #pdb.set_trace()
 
@@ -166,7 +148,7 @@ class CourseInfo:
                     #pdb.set_trace()
                     if tuple[0] == grade_id:
                         self.edited_text_set[len(self.edited_text_set)-1].set(tuple[1])
-                self.entryWidget_list_set.append(Entry(self.root, textvariable=self.edited_text_set[len(self.edited_text_set)-1]))
+                self.entryWidget_list_set.append(tk.Entry(self.root, textvariable=self.edited_text_set[len(self.edited_text_set)-1]))
                 self.entryWidget_list_set[len(self.entryWidget_list_set)-1].grid(column=2+j, row=i+1)
                 j = j + 1
             self.edited_text.append(self.edited_text_set)
@@ -174,8 +156,7 @@ class CourseInfo:
         return self.edited_text, self.entryWidget_list
 
     def Update(self):
-        ## ask if the user is sure to update
-        msg = f"""Bist du sicher, dass du die Änderungen so in die Datenbank schreiben möchtest? Alle Daten werden so in die Datenbank geschrieben!"""
+        msg = """Bist du sicher, dass du die Änderungen so in die Datenbank schreiben möchtest? Alle Daten werden so in die Datenbank geschrieben!"""
         user_return = tkinter.messagebox.askyesno(title='Änderungen speichern?', message=msg)
         if user_return is True:
             number_of_rows = len(self.edited_text)
@@ -186,15 +167,11 @@ class CourseInfo:
             for dataset in self.edited_text:
                 dataset_students_list = []
                 dataset_grades_list = []
-                #pdb.set_trace()
                 for i, entry in enumerate(dataset):
 
                     if i == 0:
                         student_id = entry.get()
-                        #dataset_students_list.append(entry.get())
-                        #dataset_grades_list.append(entry.get())
                     elif i == 1 or i == 2:
-                        #dataset_students_list.append(entry.get())
                         pass
                     else:
                         desc_of_column = self.column_desc_list[i].cget('text')
@@ -207,12 +184,10 @@ class CourseInfo:
 
                         course_id = self.SelectedCourse_obj.Get_CourseID()
                         # get grade_value
-                        #pdb.set_trace()
                         if dataset[i].get() != '':
                             grade_value = int(dataset[i].get())
                         else:
                             grade_value = ''
-                        #pdb.set_trace()
                         if type(grade_value) == int:
 
                             if grade_value_for_grade_id != []:
@@ -231,7 +206,6 @@ class CourseInfo:
                                     params = (student_id, course_id, grade_id, grade_value_for_grade_id[0][0])
                                     self.db_connection.addToDatabase(sql_update_grade_value_for_grade_id, params)
                             else:
-                                #pdb.set_trace()
                                 sql_insert_into_stud_courses_grades = "INSERT INTO stud_courses_grades (student_id, course_id, grade_id, grade_value) VALUES (?, ?, ?, ?)"
                                 params = (student_id, course_id, grade_id, grade_value)
                                 self.db_connection.addToDatabase(sql_insert_into_stud_courses_grades, params)
@@ -256,10 +230,10 @@ class MaintainCourses_Menu(CourseInfo):
         self.entryWidget_list = widget_objects_of_entries
         #self.CourseName = SelectedCourse_obj.GET_CourseName()
 
-        self.Update_Course_Table = Button(self.root, text='Änderungen Speichern', command=self.Start_Update)
+        self.Update_Course_Table = tk.Button(self.root, text='Änderungen Speichern', command=self.Start_Update)
         self.Update_Course_Table.grid(column=0, row=0)
         #AddParticipant_BE = AddParticipant(db_connection, CourseName)
-        self.AddNewParticipants = Button(self.root, text='Teilnehmende hinzufügen', command=self.Start_AddPart)
+        self.AddNewParticipants = tk.Button(self.root, text='Teilnehmende hinzufügen', command=self.Start_AddPart)
         self.AddNewParticipants.grid(column=1, row=0)
 
         self.CourseName = SelectedCourse_obj.Get_CourseName()
@@ -271,14 +245,12 @@ class MaintainCourses_Menu(CourseInfo):
         self.root = self.Frame_Obj[1]
 
         self.column_desc_list, self.edited_text = self.courseInfo_obj.Get_Vars()
-        #pdb.set_trace()
-        # self.courseInfo_obj.Update()
         self.Update()
 
 
 class CoursesDropdown_menu:
 
-    def __init__(self, db_connection, Framelist, NewCourse_Widgets):
+    def __init__(self, db_connection, Framelist):
 
         DropdownMenuFrame = Framelist[0]
         CourseInfoFrame = Framelist[1]
@@ -287,55 +259,95 @@ class CoursesDropdown_menu:
         self.FrameList = [DropdownMenuFrame, CourseInfoFrame, PieFrame, AddParticipantFrame]
         self.courseInfo = None
         self.CourseObj = None
-        self.NewCourseButtons = None
+        self.widget_dropdown_CourseNames = None
         self.db_connection = db_connection
+        self.DropdownMenuFrame = DropdownMenuFrame
+
+        self.courses_des_label = tk.Label(DropdownMenuFrame, text='Kurs auswählen:')
 
         # Initalise Widgets, which show Information about the selectede Course:
-        msg="Gespeicherte Informationen über den Kurs:"
-        self.Description_Label = Label(DropdownMenuFrame, text=msg)
+        msg = "Gespeicherte Informationen über den Kurs:"
+        self.Description_Label = tk.Label(DropdownMenuFrame, text=msg)
 
-        self.CourseID_Description_Label = Label(DropdownMenuFrame, text='Kurs ID')
-        self.CourseID_Label_Text = StringVar()
-        self.CourseID_Label = Label(DropdownMenuFrame, text=self.CourseID_Label_Text)
+        self.CourseID_Description_Label = tk.Label(DropdownMenuFrame, text='Kurs ID')
+        self.CourseID_Label_Text = tk.StringVar()
+        self.CourseID_Label = tk.Label(DropdownMenuFrame, text=self.CourseID_Label_Text.get())
 
-        self.CourseName_Description_Label = Label(DropdownMenuFrame, text='Kursname:')
-        self.CourseName_Entry_Text = StringVar()
-        self.CourseName_Entry = Entry(DropdownMenuFrame, textvariable=self.CourseName_Entry_Text)
+        self.CourseName_Description_Label = tk.Label(DropdownMenuFrame, text='Kursname:')
+        self.CourseName_Entry_Text = tk.StringVar()
+        self.CourseName_Entry = tk.Entry(DropdownMenuFrame, textvariable=self.CourseName_Entry_Text)
 
-        self.Course_Year_Description_Label = Label(DropdownMenuFrame, text='Klassenstufe')
-        self.Course_Year_Text = StringVar()
-        self.Course_Year_Entry = Entry(DropdownMenuFrame, textvariable=self.Course_Year_Text)
+        self.Course_Year_Description_Label = tk.Label(DropdownMenuFrame, text='Klassenstufe')
+        self.Course_Year_Text = tk.StringVar()
+        self.Course_Year_Entry = tk.Entry(DropdownMenuFrame, textvariable=self.Course_Year_Text)
 
-        self.ContactName_Description_Label = Label(DropdownMenuFrame, text='Ansprechpartner:')
-        self.ContactName_Text = StringVar()
-        self.ContactName_Entry = Entry(DropdownMenuFrame, textvariable=self.ContactName_Text)
+        self.ContactName_Description_Label = tk.Label(DropdownMenuFrame, text='Ansprechpartner:')
+        self.ContactName_Text = tk.StringVar()
+        self.ContactName_Entry = tk.Entry(DropdownMenuFrame, textvariable=self.ContactName_Text)
 
-        self.Course_Notes_Description_Label = Label(DropdownMenuFrame, text='Notizen:')
-        self.Course_Notes_Text = StringVar()
-        self.Course_Notes_Entry = Entry(DropdownMenuFrame, textvariable=self.Course_Notes_Text)
+        self.Course_Notes_Description_Label = tk.Label(DropdownMenuFrame, text='Notizen:')
+        self.Course_Notes_Text = tk.StringVar()
+        self.Course_Notes_Entry = tk.Entry(DropdownMenuFrame, textvariable=self.Course_Notes_Text)
 
-        self.Course_submit_changes = Button(DropdownMenuFrame, text='Änderungen speichern', command=self.Submit_Course_Changes)
+        self.Course_submit_changes = tk.Button(DropdownMenuFrame, text='Änderungen speichern', command=self.Submit_Course_Changes)
+
+
+        # Widgets to Insert a new Course
+        self.NewCourseName = tk.StringVar()
+        self.NewCourseName.set('Kursname')
+        self.Entry_CourseName = tk.Entry(DropdownMenuFrame, textvariable=self.NewCourseName)
+
+        self.NewCourseYear = tk.StringVar()
+        self.NewCourseYear.set('Jahrgang')
+        self.Entry_CourseYear = tk.Entry(DropdownMenuFrame, textvariable=self.NewCourseYear)
+
+        self.NewCourseContact = tk.StringVar()
+        self.NewCourseContact.set('Kontaktperson')
+        self.Entry_CourseContact = tk.Entry(DropdownMenuFrame, textvariable=self.NewCourseContact)
+
+        self.NewCourseNotes = tk.StringVar()
+        self.NewCourseNotes.set('Notizen')
+        self.Entry_CourseNotes = tk.Entry(DropdownMenuFrame, textvariable=self.NewCourseNotes)
+
+        self.SubmitButton = tk.Button(DropdownMenuFrame, text='Erstellen', command=self.SubmitNewCourse)
+
+        # save the new course widgets in a list
+        self.NewCourseWidgets = [self.Entry_CourseName, self.Entry_CourseYear, self.Entry_CourseContact, self.Entry_CourseNotes, self.SubmitButton]
+
 
         #self.root = DropdownMenuFrame
         self.CourseInfoFrame = CourseInfoFrame
 
-        # load all courses out of courses table
-        self.load_courses_from_db()
+        self.refresh_widgets()
 
-        # Create Dropdown-Widget with the CorseNames
-        self.clicked = StringVar()
-        self.clicked.set(self.CourseString_list[0])
-        widget_dropdown_CourseNames = OptionMenu(DropdownMenuFrame, self.clicked, *self.CourseString_list)
-        widget_dropdown_CourseNames.grid(column=0, row=0)
-        # Draw the Course info Widgets and Hide them:
-        # self.Show()
-        # self.Hide()
+        # create a button to delete course
+        self.delete_course_button = tk.Button(DropdownMenuFrame, text='Kurs löschen', command=self.delete_course)
+
 
         self.CourseIDName = self.clicked.get()
-        widget_dropdown_CourseNames.bind("<ButtonRelease-1>", lambda event: self.InspectDropdownValue(event))
 
-        self.NewCourse_Widgets = NewCourse_Widgets
-        self.DropdownMenuFrame = DropdownMenuFrame
+
+    def refresh_widgets(self):
+        # if the widget already exists, delete it
+        if self.widget_dropdown_CourseNames is not None:
+            self.widget_dropdown_CourseNames.destroy()
+        # load all courses out of courses table
+        self.load_courses_from_db()
+        # Create Dropdown-Widget with the CorseNames
+        self.clicked = tk.StringVar()
+        self.clicked.set(self.CourseString_list[0])
+        self.widget_dropdown_CourseNames = tk.OptionMenu(self.DropdownMenuFrame, self.clicked, *self.CourseString_list)
+        self.widget_dropdown_CourseNames.grid(column=1, row=0)
+        self.clicked.trace("w", self.InspectDropdownValue)
+        #self.widget_dropdown_CourseNames.bind("<ButtonRelease-1>", lambda event: self.InspectDropdownValue(event))
+
+    def delete_course(self):
+        msg = f"Bist du sicher, dass du den Kurs {self.clicked.get()} löschen möchtest?"
+        user_return = tkinter.messagebox.askyesno(title='Kurs löschen?', message=msg)
+        if user_return is True:
+            sql_delete_course = "DELETE FROM Courses WHERE course_id = ?"
+            self.db_connection.addToDatabase(sql_delete_course, (self.CourseObj.Get_CourseID(),))
+            self.refresh_widgets()
 
     def load_courses_from_db(self):
         sql = """SELECT course_id, course_name FROM Courses"""
@@ -352,32 +364,37 @@ class CoursesDropdown_menu:
         msg = f"""Sollen die Änderungen wirklich in die Datenbank geschrieben werden?"""
         user_return = tkinter.messagebox.askyesno(title='Kurs eintragen?', message=msg)
         if user_return is True:
-            #pdb.set_trace()
             params = (self.CourseName_Entry_Text.get(), self.Course_Year_Text.get(), self.ContactName_Text.get(), self.Course_Notes_Text.get())
             sql = f"UPDATE Courses SET course_name = ?, year = ?, contact_name = ?, notes = ? WHERE course_id ={self.CourseID_Label_Text.get()}"
             self.db_connection.addToDatabase(sql, params)
 
     def Show(self):
+        # update the value of the courseID label field:
+        self.CourseID_Label = tk.Label(self.DropdownMenuFrame, text=self.CourseID_Label_Text.get())
 
         if self.CourseID_Label.winfo_ismapped() == 0:
+            # delete course button widget
+            self.delete_course_button.grid(column=2, row=0)
+
+            self.courses_des_label.grid(column=0, row=0)
 
             self.Description_Label.grid(column=0, row=1)
-            self.CourseID_Description_Label.grid(column=0, row=2)
-            self.CourseID_Label.grid(column=0, row=3)
+            self.CourseID_Description_Label.grid(column=1, row=1)
+            self.CourseID_Label.grid(column=1, row=2)
 
-            self.CourseName_Description_Label.grid(column=1, row=2)
-            self.CourseName_Entry.grid(column=1, row=3)
+            self.CourseName_Description_Label.grid(column=2, row=1)
+            self.CourseName_Entry.grid(column=2, row=2)
 
-            self.Course_Year_Description_Label.grid(column=2, row=2)
-            self.Course_Year_Entry.grid(column=2, row=3)
+            self.Course_Year_Description_Label.grid(column=3, row=1)
+            self.Course_Year_Entry.grid(column=3, row=2)
 
-            self.ContactName_Description_Label.grid(column=3, row=2)
-            self.ContactName_Entry.grid(column=3, row=3)
+            self.ContactName_Description_Label.grid(column=4, row=1)
+            self.ContactName_Entry.grid(column=4, row=2)
 
-            self.Course_Notes_Description_Label.grid(column=4, row=2)
-            self.Course_Notes_Entry.grid(column=4, row=3)
+            self.Course_Notes_Description_Label.grid(column=5, row=1)
+            self.Course_Notes_Entry.grid(column=5, row=2)
 
-            self.Course_submit_changes.grid(column=2, row=4)
+            self.Course_submit_changes.grid(column=2, row=3)
 
     def Hide(self):
 
@@ -394,31 +411,28 @@ class CoursesDropdown_menu:
         self.ContactName_Entry.grid_forget()
         self.Course_Notes_Entry.grid_forget()
 
+        # delete course button
+        self.delete_course_button.grid_forget()
+
         self.Course_submit_changes.grid_forget()
 
-    def InspectDropdownValue(self, event):
+    def InspectDropdownValue(self, *args):
+
         if self.courseInfo is not None:
             self.courseInfo.Clear_Frame()
-        #pdb.set_trace()
-        if self.NewCourseButtons is not None:
-            Widgets_list = self.NewCourseButtons.Return_Widgets()
-            for Widget in Widgets_list:
-                Widget.destroy()
-            #self.NewCourseButtons.Hide()
+
         if self.clicked.get() != 'Neuer Kurs':
+            if self.Check_Buttons_New_Course() == 1:
+                for Widget in self.NewCourseWidgets:
+                    Widget.destroy()
             self.CourseIDName = self.clicked.get()
-            # if the Buttons for new Course are shown, hide them:
-            if self.NewCourse_Widgets.Check() is True:
-                self.NewCourse_Widgets.Hide()
-            #pdb.set_trace()
             # Get CourseID:
             CourseID_pos = self.CourseIDName.find(',')
             CourseID = self.CourseIDName[0:CourseID_pos]
 
-            sql_get_courseInfo = f"""SELECT * FROM Courses WHERE course_id = ?"""
+            sql_get_courseInfo = """SELECT * FROM Courses WHERE course_id = ?"""
             params = (CourseID,)
             Get_CourseInfo = self.db_connection.GetFromDatabase(sql_get_courseInfo, params)
-            #pdb.set_trace()
             Get_CourseInfo = Get_CourseInfo[0]
             self.CourseID_Label_Text.set(CourseID)
             self.CourseName_Entry_Text.set(Get_CourseInfo[1])
@@ -426,79 +440,25 @@ class CoursesDropdown_menu:
             self.ContactName_Text.set(Get_CourseInfo[3])
             self.Course_Notes_Text.set(Get_CourseInfo[4])
             self.Show()
-            #courseInfo = CourseInfo(self.db_connection, SelectedCourse, FrameList)
-            #pdb.set_trace()
             self.CourseObj = Course(self.db_connection, Get_CourseInfo[1], Get_CourseInfo[2], Get_CourseInfo[3], Get_CourseInfo[4], Get_CourseInfo[0])
-            #grid_Frame_CourseInfo = Frame(self.root, width=450, height=450)
-            #grid_Frame_CourseInfo.pack()
 
             self.courseInfo = CourseInfo(self.db_connection, self.CourseObj, self.FrameList)
-            #widget_list = self.root.slaves()
         else:
-            #pdb.set_trace()
+            # if we set the dropdown menu to New Course, the CourseObj is set to None
+            # to make sure that not the wrong course is edited
+            self.CourseObj = None
+
+
+
             self.Hide()
-            self.NewCourseButtons = ButtonsNewCourseEntry(self.FrameList, self.db_connection)
-            if self.NewCourse_Widgets.Check() is True:
+            self.Show_Buttons_New_course()
+            if self.Check_Buttons_New_Course() is True:
                 pass
             else:
-                self.NewCourse_Widgets.Show()
+                self.Show_Buttons_New_course()
 
     def GET_Course_Obj(self):
         return self.CourseObj
-
-
-class ButtonsNewCourseEntry(CoursesDropdown_menu):
-
-    def __init__(self, root, db_connection):
-
-        #self.Courses_dropdown_menu_obj = Courses_dropdown_menu_obj
-        self.FrameList = root
-        self.root = root[0]
-        self.db_connection = db_connection
-
-        self.NewCourseName = StringVar()
-        self.NewCourseName.set('Kursname')
-        self.Entry_CourseName = Entry(self.root, textvariable=self.NewCourseName)
-
-        self.NewCourseYear = StringVar()
-        self.NewCourseYear.set('Jahrgang')
-        self.Entry_CourseYear = Entry(self.root, textvariable=self.NewCourseYear)
-
-        self.NewCourseContact = StringVar()
-        self.NewCourseContact.set('Kontaktperson')
-        self.Entry_CourseContact = Entry(self.root, textvariable=self.NewCourseContact)
-
-        self.NewCourseNotes = StringVar()
-        self.NewCourseNotes.set('Notizen')
-        self.Entry_CourseNotes = Entry(self.root, textvariable=self.NewCourseNotes)
-
-        self.SubmitButton = Button(self.root, text='Erstellen', command=self.SubmitNewCourse)
-
-    def get_dropdown_menu_obj(self, Courses_dropdown_menu_obj):
-        self.Courses_dropdown_menu_obj = Courses_dropdown_menu_obj
-
-    def Show(self):
-
-        self.Entry_CourseName.grid(column=0, row=1)
-        self.Entry_CourseYear.grid(column=0, row=2)
-        self.Entry_CourseContact.grid(column=0, row=3)
-        self.Entry_CourseNotes.grid(column=0, row=4)
-        self.SubmitButton.grid(column=0, row=5)
-
-    def Hide(self):
-
-        self.Entry_CourseName.grid_forget()
-        self.Entry_CourseYear.grid_forget()
-        self.Entry_CourseNotes.grid_forget()
-        self.Entry_CourseContact.grid_forget()
-        self.SubmitButton.grid_forget()
-
-    def Check(self):
-        ## only check for one Entry Field:
-        return self.Entry_CourseName.winfo_ismapped()
-
-    def Return_Widgets(self):
-        return [self.Entry_CourseName, self.Entry_CourseYear, self.Entry_CourseNotes, self.Entry_CourseContact, self.SubmitButton]
 
     def SubmitNewCourse(self):
 
@@ -515,7 +475,7 @@ class ButtonsNewCourseEntry(CoursesDropdown_menu):
         if user_return is True:
             # set CourseId -1 if its a new Course
             self.SelectedCourse = Course(self.db_connection, CourseName, Year, Contact, Notes, -1)
-        self.Hide()
+        #self.Hide()
 
         # set the values in the entry fields for the edit of the course info with the data
         # of the new course
@@ -524,9 +484,30 @@ class ButtonsNewCourseEntry(CoursesDropdown_menu):
         self.ContactName_Text.set(Contact)
         self.Course_Notes_Text.set(Notes)
         # load the course list so that the new course appears in the dropdown menu
-        self.load_courses_from_db()
-        self.Courses_dropdown_menu_obj.Show()
+        self.refresh_widgets()
+        self.Hide_Buttons_New_Course()
+        self.Show()
         CourseInfo(self.db_connection, self.SelectedCourse, self.FrameList)
+
+    def Show_Buttons_New_course(self):
+
+        self.Entry_CourseName.grid(column=0, row=1)
+        self.Entry_CourseYear.grid(column=0, row=2)
+        self.Entry_CourseContact.grid(column=0, row=3)
+        self.Entry_CourseNotes.grid(column=0, row=4)
+        self.SubmitButton.grid(column=0, row=5)
+
+    def Hide_Buttons_New_Course(self):
+
+        self.Entry_CourseName.grid_forget()
+        self.Entry_CourseYear.grid_forget()
+        self.Entry_CourseNotes.grid_forget()
+        self.Entry_CourseContact.grid_forget()
+        self.SubmitButton.grid_forget()
+
+    def Check_Buttons_New_Course(self):
+        # only check for one Entry Field:
+        return self.Entry_CourseName.winfo_ismapped()
 
 
 class AddParticipant(CourseInfo):
@@ -536,8 +517,7 @@ class AddParticipant(CourseInfo):
         self.SelectedCourse_obj = SelectedCourse_obj
 
         self.db_connection = db_connection
-        self.AddParticipant_window = Toplevel()
-        #Label(self.AddParticipant_window, text="Es können Teilnehmende, die schon in der Datenbank sind, in den Kurs eingetragen werden, oder neue Teilnehmende in das System aufgenommen werden.").pack()
+        self.AddParticipant_window = tk.Toplevel()
 
         # get all students
         #get all students who are in the selected course
@@ -566,12 +546,12 @@ class AddParticipant(CourseInfo):
         rows = len(self.students_info)
 
         # build first row:
-        self.student_id_label = Label(self.AddParticipant_window, text='Student ID')
-        self.student_forname_label = Label(self.AddParticipant_window, text='Vorname')
-        self.student_surname_label = Label(self.AddParticipant_window, text='Nachname')
-        self.student_year_label = Label(self.AddParticipant_window, text='Klasse')
-        self.student_tutor_label = Label(self.AddParticipant_window, text='Tutor')
-        self.add_to_course_box = Label(self.AddParticipant_window, text='Zu Kurs hinzufügen?')
+        self.student_id_label = tk.Label(self.AddParticipant_window, text='Student ID')
+        self.student_forname_label = tk.Label(self.AddParticipant_window, text='Vorname')
+        self.student_surname_label = tk.Label(self.AddParticipant_window, text='Nachname')
+        self.student_year_label = tk.Label(self.AddParticipant_window, text='Klasse')
+        self.student_tutor_label = tk.Label(self.AddParticipant_window, text='Tutor')
+        self.add_to_course_box = tk.Label(self.AddParticipant_window, text='Zu Kurs hinzufügen?')
 
         self.student_id_label.grid(column=start_column, row=start_row)
         self.student_forname_label.grid(column=start_column+1, row=start_row)
@@ -586,34 +566,30 @@ class AddParticipant(CourseInfo):
         checkbox_list = []
         checkbox_var_list = []
         widget_list_row = []
-        #pdb.set_trace()
         for current_row_number in range(0, rows):
             current_row = self.students_info[current_row_number]
-            #pdb.set_trace()
             if current_row[0] in self.students_in_selected_course:
-                #pdb.set_trace()
                 bgcolor = 'yellow'
             else:
                 bgcolor = 'white'
 
-            widget_list_row.append(Label(self.AddParticipant_window, text=current_row[0], bg=bgcolor))
-            #pdb.set_trace()
+            widget_list_row.append(tk.Label(self.AddParticipant_window, text=current_row[0], bg=bgcolor))
             widget_list_row[current_row_number].grid(column=start_column, row=start_row+current_row_number+1)
             entry_list_row = []
             entry_var_row = []
             for current_column_number in range(0, len(current_row)-1):
 
-                aktuell = StringVar()
+                aktuell = tk.StringVar()
                 aktuell.set(current_row[current_column_number+1])
                 entry_var_row.append(aktuell)
-                entry_list_row.append(Entry(self.AddParticipant_window, textvariable=entry_var_row[current_column_number], bg=bgcolor))
+                entry_list_row.append(tk.Entry(self.AddParticipant_window, textvariable=entry_var_row[current_column_number], bg=bgcolor))
                 entry_list_row[current_column_number].grid(column=start_column+current_column_number+1, row=start_row+current_row_number+1)
-            checkbox_value = StringVar()
+            checkbox_value = tk.StringVar()
             checkbox_value.set('0')
             checkbox_var_list.append(checkbox_value)
 
-            checkbox_list.append(Checkbutton(self.AddParticipant_window, variable=checkbox_var_list[len(checkbox_var_list)-1], onvalue=1, offvalue=0, text='Zu Kurs hinzufügen?'))
-
+            checkbox_list.append(tk.Checkbutton(self.AddParticipant_window, variable=checkbox_var_list[len(checkbox_var_list)-1], onvalue=1, offvalue=0, text='Zu Kurs hinzufügen?'))
+            pdb.set_trace()
             if current_row[0] in self.students_in_selected_course:
                 checkbox_list[len(checkbox_list)-1].config(state=DISABLED)
                 checkbox_var_list[len(checkbox_var_list)-1].set('0')
@@ -623,45 +599,46 @@ class AddParticipant(CourseInfo):
 
             entry_list.append(entry_list_row)
             entry_var.append(entry_var_row)
-        self.add_new_student_to_system = StringVar()
+        self.add_new_student_to_system = tk.StringVar()
         self.add_new_student_to_system.set('0')
-        self.Checkbox_Add_new_student_to_system = Checkbutton(self.AddParticipant_window, text='Neuen Teilnehmenden hinzufügen', onvalue=1, offvalue=0, variable=self.add_new_student_to_system, command=self.show_new_student_widgets)
+        self.Checkbox_Add_new_student_to_system = tk.Checkbutton(self.AddParticipant_window, text='Neuen Teilnehmenden hinzufügen', onvalue=1, offvalue=0, variable=self.add_new_student_to_system, command=self.show_new_student_widgets)
         self.Checkbox_Add_new_student_to_system.grid(column=start_column, row=len(self.students_info)+2)
 
         self.new_stud_widget_list = []
         self.new_stud_var_list = []
 
         # New Field for Forname
-        self.new_stud_var_list.append(StringVar())
+        self.new_stud_var_list.append(tk.StringVar())
         self.new_stud_var_list[0].set('Vorname')
-        self.new_stud_widget_list.append(Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[0]))
+        self.new_stud_widget_list.append(tk.Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[0]))
         # New Field for Surname
-        self.new_stud_var_list.append(StringVar())
+        self.new_stud_var_list.append(tk.StringVar())
         self.new_stud_var_list[1].set('Nachname')
-        self.new_stud_widget_list.append(Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[1]))
+        self.new_stud_widget_list.append(tk.Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[1]))
         # New Field for School Year
-        self.new_stud_var_list.append(StringVar())
+        self.new_stud_var_list.append(tk.StringVar())
         self.new_stud_var_list[2].set('Schuljahr')
-        self.new_stud_widget_list.append(Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[2]))
+        self.new_stud_widget_list.append(tk.Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[2]))
         # new Field for Tutor
-        self.new_stud_var_list.append(StringVar())
+        self.new_stud_var_list.append(tk.StringVar())
         self.new_stud_var_list[3].set('Tutor')
-        self.new_stud_widget_list.append(Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[3]))
+        self.new_stud_widget_list.append(tk.Entry(self.AddParticipant_window, textvariable=self.new_stud_var_list[3]))
 
         # show it on screen
 
-
-        checkbox_var_list.append(StringVar())
+        checkbox_var_list.append(tk.StringVar())
         checkbox_var_list[len(checkbox_var_list)-1].set('0')
-        checkbox_list.append(Checkbutton(self.AddParticipant_window, variable=checkbox_var_list[len(checkbox_var_list)-1], onvalue=1, offvalue=0, text='Zu Kurs hinzufügen?'))
-
-
+        checkbox_list.append(tk.Checkbutton(self.AddParticipant_window, variable=checkbox_var_list[len(checkbox_var_list)-1], onvalue=1, offvalue=0, text='Zu Kurs hinzufügen?'))
 
         self.checkbox_list = checkbox_list
         self.checkbox_var_list = checkbox_var_list
 
-        self.SubmitButton = Button(self.AddParticipant_window, text='Änderungen speichern', command=self.submit_changes)
+        self.SubmitButton = tk.Button(self.AddParticipant_window, text='Änderungen speichern', command=self.submit_changes)
         self.SubmitButton.grid(column=start_column, row=len(self.students_info)+3)
+
+    def delete_widgets_in_grid(self):
+        for widget in self.new_stud_widget_list:
+            widget.destroy()
 
     def show_new_student_widgets(self):
         start_column = 0
@@ -676,19 +653,23 @@ class AddParticipant(CourseInfo):
                 obj.grid_forget()
             self.checkbox_list[len(self.checkbox_list)-1].grid_forget()
 
-
     def submit_changes(self):
         for i, checkbox_var in enumerate(self.checkbox_var_list):
             if checkbox_var.get() == '1':
                 sql_check_if_entry = "SELECT student_id FROM stud_courses WHERE student_id = ? AND course_id = ?"
-
-                params_select_check = (self.students_info[i][0], self.SelectedCourse_obj.Get_CourseID())
+                try:
+                    stud_info = self.students_info[i][0]
+                except:
+                    stud_info = ''
+                params_select_check = (stud_info, self.SelectedCourse_obj.Get_CourseID())
                 returned_values = self.db_connection.GetFromDatabase(sql_check_if_entry, params_select_check)
 
                 if len(returned_values) == 0:
 
                     sql_insert_into_stud_courses = "INSERT INTO stud_courses (student_id, course_id) VALUES (?, ?)"
                     self.db_connection.addToDatabase(sql_insert_into_stud_courses, params_select_check)
+        self.delete_widgets_in_grid()
+        self.build_grid()
 
         # if checkbox for new participant is activated write new student to table
         if self.add_new_student_to_system.get() == '1':
@@ -743,19 +724,10 @@ class AddParticipant(CourseInfo):
             Selected_studentID = self.selected_value_dropdownMenu[0:first_dot_pos]
             print(Selected_studentID)
             self.SelectedCourse_obj.AddStudent(Selected_studentID)
-            #pdb.set_trace()
-            #self.AddedStudent = Student(self.participants_list[0][1], self.participants_list[0][2], self.participants_list[0][3], self.participants_list[0][4])
-
             self.AddParticipant_window.destroy()
-            # Label(self.AddParticipant_window, text="Noten hinzufügen:").pack()
-            # for i, grade in enumerate(self.grade_Entry_list):
-            #     Label(self.AddParticipant_window, text=self.gradeNames[i]).pack()
-            #     grade.pack()
 
     def InspectParticipantsDropDown(self, event):
-        #pdb.set_trace()
         if self.participant_shown.get() == 'Teilnehmenden hinzufügen':
-            #pdb.set_trace()
             if self.Check_Widgets() == 0:
                 self.Show_Widgets()
         else:
@@ -770,13 +742,13 @@ class AddParticipant(CourseInfo):
 
 def ManageCourses(db_connection):
 
-    root1 = Toplevel()
+    root1 = tk.Toplevel()
 
     # Initalise the Frames which split the Window
-    DropdownMenuFrame = Frame(root1)
-    CourseInfoFrame = Frame(root1)
-    PieFrame = Frame(root1)
-    AddParticipantFrame = Frame(root1)
+    DropdownMenuFrame = tk.Frame(root1)
+    CourseInfoFrame = tk.Frame(root1)
+    PieFrame = tk.Frame(root1)
+    AddParticipantFrame = tk.Frame(root1)
 
     # Draw the Frames:
     DropdownMenuFrame.grid(column=0, row=0)
@@ -788,10 +760,5 @@ def ManageCourses(db_connection):
 
     FrameList = [DropdownMenuFrame, CourseInfoFrame, PieFrame, AddParticipantFrame]
 
-    ButtonsNewCourse_obj = ButtonsNewCourseEntry(FrameList, db_connection)
-
-    DropDownMenu = CoursesDropdown_menu(db_connection, FrameList, ButtonsNewCourse_obj)
-    ButtonsNewCourse_obj.get_dropdown_menu_obj(DropDownMenu)
-
-
+    DropDownMenu = CoursesDropdown_menu(db_connection, FrameList)
     root1.mainloop()
