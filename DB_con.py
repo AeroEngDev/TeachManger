@@ -1,10 +1,14 @@
 import sqlite3
 import pdb
 
+
 class DB_con:
-    def __init__(self):
-        self.conn = sqlite3.connect("database.db")
-        self.c = self.conn.cursor()
+    def __init__(self, db_name):
+        try:
+            self.conn = sqlite3.connect(db_name)
+            self.c = self.conn.cursor()
+        except:
+            pass
 
     def __del__(self):
         self.conn.close()
@@ -90,10 +94,18 @@ class DB_con:
         #self.conn.commit()
 
     def CreateTableCalenderEntries(self):
-        sql = f"""CREATE TABLE IF NOT EXISTS CalenderEntries (EntryID INTEGER, EntryName TEXT, EntryYear INTEGER,
-        EntryMonth INTEGER, EntryDay INTEGER, EntryHour INTEGER,
-        EntryMin INTEGER, Notes TEXT, LinkedPersons BLOB, AlertTiming TEXT, PRIMARY KEY(EntryID))"""
+        sql = """CREATE TABLE IF NOT EXISTS CalenderEntries (entry_id INTEGER, entry_name TEXT, date Date,
+         notes TEXT, alert_timing TEXT, PRIMARY KEY(entry_id))"""
         self.c.execute(sql)
+
+        sql_junktion_table = """CREATE TABLE IF NOT EXISTS cal_stud_courses
+         (entry_id INTEGER,
+         student_id INTEGER,
+         course_id INTEGER,
+         FOREIGN KEY(entry_id) REFERENCES CalenderEntries(entry_id),
+         FOREIGN KEY(student_id) REFERENCES Students(student_id),
+         FOREIGN KEY(course_id) REFERENCES Courses(course_id))"""
+        self.c.execute(sql_junktion_table)
 
     def CreateTableSettings(self):
 

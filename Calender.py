@@ -1,14 +1,184 @@
-import datetime
+import datetime as dt
 import sqlite3
 import numpy as np
 from DB_con import DB_con
+import tkinter as tk
+import tkinter.ttk as ttk
+import tkinter.messagebox
+import pdb
 
 
-class calender:
-    def __init__(self):
-        self.db_conn = DB_con()
-        #self.db_conn = db_conn
-        self.db_conn.CreateTableCalenderEntries()
+class Calender:
+
+    def __init__(self, db_connection, calender_frame, parent_window):
+        self.parent_window = parent_window
+        self.db_connection = db_connection
+        self.calender_frame = calender_frame
+        self.heading_frame = tk.Frame(self.calender_frame)
+        self.heading_frame.grid(column=0, row=0)
+
+        self.cal_number_buttons_frame = tk.Frame(self.calender_frame)
+        self.cal_number_buttons_frame.grid(column=0, row=1)
+
+        self.cal_upcoming_events_frame = tk.Frame(self.calender_frame)
+        self.cal_upcoming_events_frame.grid(column=0, row=2)
+
+        # upcoming events frame segmentation:
+        self.upcoming_events_heading_frame = tk.Frame(self.cal_upcoming_events_frame)
+        self.upcoming_events_heading_frame.grid(column=0, row=0)
+
+        self.upcoming_events_content_frame = tk.Frame(self.cal_upcoming_events_frame)
+        self.upcoming_events_content_frame.grid(column=0, row=1)
+
+        self.heading_upcoming_event_label = ttk.Label(self.upcoming_events_heading_frame, text='Bevorstehende Termine', style="My.TLabel")
+        self.heading_upcoming_event_label.grid(column=0, row=0)
+        event_timeing_list = ['1 Tag', '1 Woche', '1 Monat']
+        self.selected_upcoming_event_time = tk.StringVar()
+        self.selected_upcoming_event_time.set(event_timeing_list[0])
+        self.select_upcoming_event_time = tk.OptionMenu(self.upcoming_events_heading_frame, self.selected_upcoming_event_time, *event_timeing_list)
+        self.select_upcoming_event_time.grid(column=0, row=1)
+
+        def func(event):
+            self.show_next_events()
+        self.select_upcoming_event_time.bind('<Configure>', func)
+        self.show_next_events()
+
+        # insert the plus button for the creation of a new event:
+        photo = tk.PhotoImage(file="plus_button.gif")
+        self.plus_button = tk.Button(self.heading_frame, image=photo, command=self.create_new_event)
+        self.plus_button.image = photo
+        self.plus_button.grid(column=0, row=0)
+
+        self.heading_label = ttk.Label(self.heading_frame, text='Kalender', style="My.TLabel")
+        self.heading_label.grid(column=1, row=0)
+
+
+    def create_new_event(self):
+        self.child_window_for_new_cal_entry = tk.Toplevel(self.parent_window)
+        self.heading_frame = tk.Frame(self.child_window_for_new_cal_entry)
+        self.heading_frame.grid(column=0, row=0)
+        self.heading_label_new_cal = ttk.Label(self.heading_frame, text='Neuer Kalendereintrag', style="My.TLabel")
+        self.heading_label_new_cal.grid(column=0, row=0)
+
+        self.content_frame = tk.Frame(self.child_window_for_new_cal_entry)
+        self.content_frame.grid(column=0, row=1)
+
+        self.label_entry_name = tk.Label(self.content_frame, text='Name des Eintrags')
+        self.label_entry_name.grid(column=0, row=0)
+
+        self.entry_widget_name_var = tk.StringVar()
+        self.entry_widget_name = tk.Entry(self.content_frame, textvariable=self.entry_widget_name_var, justify=tk.CENTER)
+        self.entry_widget_name.grid(column=1, row=0, ipadx=100)
+
+        self.label_date = tk.Label(self.content_frame, text='Zeitpunkt des Events')
+        self.label_date.grid(column=0, row=1)
+
+        # set the text of the entry widget the current datetime in 2 hours:
+        datetime_now = dt.datetime.now()
+        datetime_in_2hours = datetime_now + dt.timedelta(hours=2)
+
+        datetime_round_up_to_full_hours = dt.datetime(datetime_in_2hours.year, datetime_in_2hours.month, datetime_in_2hours.day, datetime_in_2hours.hour)
+        self.str_datetime_full_hours = datetime_round_up_to_full_hours.strftime("%d.%m.%Y %H:%M")
+
+        self.entry_date_var = tk.StringVar()
+        self.entry_date_var.set(self.str_datetime_full_hours)
+        self.entry_date = tk.Entry(self.content_frame, textvariable=self.entry_date_var, justify=tk.CENTER)
+        self.entry_date.grid(column=1, row=1, ipadx=100)
+        #self.entry_date.bind('<Configure>', self.check_date_entry)
+
+        self.notes_label = tk.Label(self.content_frame, text='Notizen')
+        self.notes_label.grid(column=0, row=2)
+
+        self.notes_entry_var = tk.StringVar()
+        self.notes_entry = tk.Entry(self.content_frame, textvariable=self.notes_entry_var)
+        self.notes_entry.grid(column=1, row=2, ipadx=100, ipady=50)
+
+        self.submit_button_new_cal_entry = tk.Button(self.content_frame, text='Abschicken', command=self.submit_new_cal_entry)
+        self.submit_button_new_cal_entry.grid(column=1, row=3)
+
+
+    def submit_new_cal_entry(self):
+        # check if datetime string is interpretable:
+        try:
+            new_cal_entry_datetime_obj = dt.datetime.strptime(self.entry_date_var.get(), "%d.%m.%Y %H:%M")
+
+        except:
+            ok_click = tkinter.messagebox.showerror(title='Fehler!', message='Das Format des Datums war fehlerhaft. Bitte korrigieren!')
+            self.entry_date.configure(bg="red")
+            self.entry_date_var.set(self.str_datetime_full_hours)
+            if ok_click:
+                self.child_window_for_new_cal_entry.lift()
+                return
+
+        if self.entry_widget_name_var.get() == '':
+            ok_click = tkinter.messagebox.showerror(title='Fehler!', message='Der Name darf nicht leer sein!')
+            self.entry_widget_name.configure(bg="red")
+            if ok_click:
+                self.child_window_for_new_cal_entry.lift()
+                return
+
+        else:
+            sql_insert_new_cal_into_db = "INSERT INTO CalenderEntries (entry_name, date, notes) VALUES (?, ?, ?)"
+            params_insert = (self.entry_widget_name_var.get(), new_cal_entry_datetime_obj, self.notes_entry_var.get())
+            try:
+                self.db_connection.addToDatabase(sql_insert_new_cal_into_db, params_insert)
+                on_click = tkinter.messagebox.showinfo(title='Erfolg!', message='Eintrag erfolgreich eingetragen!')
+                if on_click:
+                    self.child_window_for_new_cal_entry.destroy()
+                    return
+            except:
+                on_click = tkinter.messagebox.showerror(title="Fehler!", message="Event konnte nicht eingetragen werden! Unbekannter Fehler...")
+                if on_click:
+                    self.child_window_for_new_cal_entry.destroy()
+                    return
+
+    def show_next_events(self):
+        Shown_events_timing = self.selected_upcoming_event_time.get()
+        if Shown_events_timing == '1 Tag':
+            event_timing_timedelt = dt.timedelta(days=1)
+        elif Shown_events_timing == '1 Woche':
+            event_timing_timedelt = dt.timedelta(weeks=1)
+        else:
+            event_timing_timedelt = dt.timedelta(weeks=4)
+        datetime_until_output = dt.datetime.now() + event_timing_timedelt
+
+        sql_get_events_from_db = "SELECT * FROM CalenderEntries WHERE date < ? AND date > ?"
+        params_date_selection = (datetime_until_output, dt.datetime.now())
+        events_output = self.db_connection.GetFromDatabase(sql_get_events_from_db, params_date_selection)
+        self.show_events_treeview = ttk.Treeview(self.upcoming_events_content_frame)
+        self.show_events_treeview["columns"] = ('Eintrag ID', 'Eintragsname', 'Zeitpunkt', 'Zeit bis zum Event')
+        self.show_events_treeview.column('Eintrag ID')
+        self.show_events_treeview.column('Eintragsname')
+        self.show_events_treeview.column('Zeitpunkt')
+        self.show_events_treeview.column('Zeit bis zum Event')
+
+        self.show_events_treeview.heading('Eintrag ID', text='Eintrag ID')
+        self.show_events_treeview.heading('Eintragsname', text='Eintragsname')
+        self.show_events_treeview.heading('Zeitpunkt', text='Zeitpunkt')
+        self.show_events_treeview.heading('Zeit bis zum Event', text='Zeit bis zum Event')
+        for event in events_output:
+            self.show_events_treeview.insert('', 'end', values=(event[0], event[1], event[2], 'kommt noch'))
+
+        self.show_events_treeview.grid(column=0, row=0)
+
+    def build_grid(self, year, month):
+        date_next_month = dt.datetime(year, month+1, 1)
+
+        date_last_day_of_month = date_next_month - dt.timedelta(days=1)
+        self.button_day_list = []
+        i = 0
+        j = 0
+
+        for day in range(1, date_last_day_of_month.day+1):
+            self.button_day_list.append(tk.Button(self.cal_number_buttons_frame, text=day, command=self.calender_day_clicked))
+            self.button_day_list[len(self.button_day_list)-1].grid(column=i, row=j)
+            i = i + 1
+            if i > 5:
+                i = 0
+                j = j + 1
+
+    def calender_day_clicked(self):
+        pass
 
     def new_entry(self, EntryDate, EntryName, Notes, LinkedPersons, AlertTiming):
         ## Umrechnung des Alert-Timings in ein Datum:
