@@ -199,23 +199,67 @@ class CourseInfo:
     def compare_import_data_and_db_data(self):
         self.status_label_check_headings_of_imported_data = tk.Label(self.excel_window_content_frame, text='Vergleiche die Spalten Namen des Spreadsheets mit denen der Datenbank...')
         self.status_label_check_headings_of_imported_data.grid(column=0, row=2)
-
+        label_spreadsheet_column = tk.Label(self.excel_window_content_frame, text='Spreadsheet Spalten-Überschrift')
+        label_spreadsheet_column.grid(column=0, row=3)
+        label_db_column = tk.Label(self.excel_window_content_frame, text='Datenbank Spalten-Überschrift')
+        label_db_column.grid(column=2, row=3)
         imported_column_label_list = []
-        list_of_listboxes = []
-        list_of_listboxes_var = []
+        self.list_of_listboxes = []
+        self.list_of_listboxes_var = []
         option_menu_items = list(self.dict_view_mode.keys())
-        for imported_column in self.spreadsheet_data_dict.keys():
+        number_of_hits = 0
+        self.list_of_unallocated_spreadsheet_columns = list(self.spreadsheet_data_dict.keys())
+        for pos_spreadsheet, imported_column in enumerate(self.spreadsheet_data_dict.keys()):
             imported_column_label_list.append(tk.Label(self.excel_window_content_frame, text=imported_column))
-            imported_column_label_list[len(imported_column_label_list)-1].grid(column=0, row=3+len(imported_column_label_list)-1)
+            imported_column_label_list[len(imported_column_label_list)-1].grid(column=0, row=3+len(imported_column_label_list))
             arrow = tk.Label(self.excel_window_content_frame, text='->')
-            arrow.grid(column=1, row=3+len(imported_column_label_list)-1)
-            list_of_listboxes_var.append(tk.StringVar())
-            list_of_listboxes.append(tk.OptionMenu(self.excel_window_content_frame, list_of_listboxes_var[len(list_of_listboxes_var)-1], *option_menu_items))
+            arrow.grid(column=1, row=3+len(imported_column_label_list))
+            self.list_of_listboxes_var.append(tk.StringVar())
+            self.list_of_listboxes.append(tk.OptionMenu(self.excel_window_content_frame, self.list_of_listboxes_var[len(self.list_of_listboxes_var)-1], *option_menu_items, command=self.changed_option_menu))
 
-            list_of_listboxes[len(list_of_listboxes)-1].grid(column=2, row=3+len(imported_column_label_list)-1)
+            self.list_of_listboxes[len(self.list_of_listboxes)-1].grid(column=2, row=3+len(imported_column_label_list))
             if imported_column in self.dict_view_mode.keys():
-                list_of_listboxes_var[len(list_of_listboxes_var)-1].set(imported_column)
+                self.list_of_listboxes_var[len(self.list_of_listboxes_var)-1].set(imported_column)
+                self.list_of_unallocated_spreadsheet_columns.remove(imported_column)
+                number_of_hits += 1
 
+        self.show_number_of_hits = tk.Label(self.excel_window_content_frame, text=f'Es wurden {number_of_hits} von {len(self.spreadsheet_data_dict.keys())} Spalten zugeordnet.')
+        self.show_number_of_hits.grid(column=0, row=3+len(imported_column_label_list)+1)
+        row_pos_excel_window = 3+len(imported_column_label_list)
+        if len(option_menu_items) < len(list(self.spreadsheet_data_dict.keys())):
+            self.label_more_spreadsheet_data_than_db = tk.Label(self.excel_window_content_frame, text='Es wurden mehr Spalten im Spreadsheet gefunden, als in der Datenbank vorhanden sind.')
+            self.label_more_spreadsheet_data_than_db_2 = tk.Label(self.excel_window_content_frame, text='Wenn alle Spalten eingelesen werden soll, müssen weitere Notenspalten in der Datenabnk definiert werden')
+            row_pos_excel_window += 1
+            self.label_more_spreadsheet_data_than_db.grid(column=0, row=row_pos_excel_window)
+            row_pos_excel_window += 1
+            self.label_more_spreadsheet_data_than_db_2.grid(column=0, row=row_pos_excel_window)
+            self.label_add_db_column = tk.Label(self.excel_window_content_frame, text='Neue Notenspalten zur Datenbank hinzufügen:')
+            row_pos_excel_window += 1
+            self.label_add_db_column.grid(column=0, row=row_pos_excel_window)
+            self.list_of_unallocated_column_entries = []
+            self.list_of_unallocated_column_entries_var = []
+            self.unallocated_column_button = []
+            for unallocated_column in self.list_of_unallocated_spreadsheet_columns:
+                self.list_of_unallocated_column_entries_var.append(tk.StringVar())
+                self.list_of_unallocated_column_entries_var[len(self.list_of_unallocated_column_entries_var)-1].set(unallocated_column)
+                self.list_of_unallocated_column_entries.append(tk.Entry(self.excel_window_content_frame, textvariable=self.list_of_unallocated_column_entries_var[len(self.list_of_unallocated_column_entries_var)-1]))
+                row_pos_excel_window += 1
+                pdb.set_trace()
+                self.list_of_unallocated_column_entries[len(self.list_of_unallocated_column_entries)-1].grid(column=0, row=row_pos_excel_window)
+                self.unallocated_column_button.append(tk.Button(self.excel_window_content_frame))
+                self.unallocated_column_button[len(self.unallocated_column_button)-1].grid(column=1, row=row_pos_excel_window)
+            self.PieChart_obj.new_window_for_new_grade()
+
+
+
+    def changed_option_menu(self, event):
+        # if the option menus are changed the counter of allocated columns is increased:
+        counter_of_hits = 0
+        for option_menu_var in self.list_of_listboxes_var:
+            if option_menu_var.get() != '':
+                counter_of_hits += 1
+        self.number_of_hits = counter_of_hits
+        self.show_number_of_hits.config(text=f'Es wurden {self.number_of_hits} von {len(self.spreadsheet_data_dict.keys())} Spalten zugeordnet.')
 
     def submit_excel_export(self):
         self.excel_window_obj = excel_interact(self.file_name_var.get())
