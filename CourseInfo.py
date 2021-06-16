@@ -56,15 +56,17 @@ class CourseInfo:
         self.label_heading_student_info = ttk.Label(self.course_info_heading_frame, text='Teilnehmende und Notenpunkte im Kurs', style="My.TLabel")
         self.label_heading_student_info.grid(column=4, row=0)
         # to make the scrollbar happen, we need a canvas inside the course info frame
-        self.course_info_frame_canvas = tk.Canvas(self.CourseInfoFrame, width=current_display_size[0]/2)
+        self.course_info_frame_canvas = tk.Canvas(self.CourseInfoFrame, width=current_display_size[0]/2, height=600)
         self.course_info_frame_canvas.grid(column=0, row=1, sticky='nw')
         # create a horizontal scrollbar for the course info Frame:
         self.hscrollbar = tk.Scrollbar(self.CourseInfoFrame, orient=tk.HORIZONTAL, command=self.course_info_frame_canvas.xview)
-        self.hscrollbar.grid(column=0, row=1, columnspan=2, sticky='ew')
+        self.hscrollbar.grid(column=0, row=2, columnspan=2, sticky='ew')
 
         self.vscrollbar = tk.Scrollbar(self.CourseInfoFrame, orient=tk.VERTICAL, command=self.course_info_frame_canvas.yview)
-        self.vscrollbar.grid(column=2, row=0, sticky='e', rowspan=2)
+        self.vscrollbar.grid(column=2, row=1)
 
+        self.CourseInfoFrame.grid_rowconfigure(0, weight=1)
+        self.CourseInfoFrame.grid_columnconfigure(0, weight=1)
         # configure the axes
         self.course_info_frame_canvas.configure(xscrollcommand=self.hscrollbar.set, scrollregion=(0, 0, 2000,2000), yscrollcommand=self.vscrollbar.set)
         self.course_info_frame_canvas.bind('<Configure>', lambda e: self.course_info_frame_canvas.bbox("all"))
@@ -205,8 +207,6 @@ class CourseInfo:
 
     def click_view_mode_button(self):
 
-        #self.Clear_Frame()
-        #self.read_mode_obj.show()
         for widget_list in self.entryWidget_list:
             for widget in widget_list:
                 widget.grid_forget()
@@ -263,6 +263,7 @@ class CourseInfo:
         id_list = []
         forname_list = []
         surname_list = []
+        #pdb.set_trace()
         for student in self.student_ids_in_course:
             id_list.append(student[0])
             forname_list.append(student[1])
@@ -278,8 +279,7 @@ class CourseInfo:
         self.dict_view_mode['Nachname'] = surname_list
 
         for key, value in self.dict_view_grades.items():
-            self.dict_view_mode[self.grade_names[key]] = value
-
+            self.dict_view_mode[f"{key},{self.grade_names[key]}"] = value
 
         # build the grid of entries
         self.edited_text, self.entryWidget_list = self.build_grid()
@@ -435,6 +435,8 @@ class CourseInfo:
         msg = """Bist du sicher, dass du die Änderungen so in die Datenbank schreiben möchtest? Alle Daten werden so in die Datenbank geschrieben!"""
         user_return = tkinter.messagebox.askyesno(title='Änderungen speichern?', message=msg, parent=self.child_window)
         if user_return is True:
+
+            self.dict_child_grade_id_matplotlib_obj = self.PieChart_obj.dict_child_grade_id_matplotlib_obj
             number_of_rows = len(self.edited_text)
             number_of_columns = len(self.edited_text[0])
             # a dataset is a whole row of the table, while a entry is just one entry of the table

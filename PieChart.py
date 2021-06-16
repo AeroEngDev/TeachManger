@@ -160,6 +160,9 @@ class PieChart:
         child_name_list = []
         child_id_name_list = []
         child_id_list = []
+
+        self.child_grades_not_scales = []
+
         for key, value in self.dict_parent_weights.items():
             parent_grade_weight_list.append(value[2])
             parent_grade_name_list.append(f"{value[0]}, {value[1]}")
@@ -174,6 +177,7 @@ class PieChart:
                 child_id_name_list.append(f"{child_grade[0]}, {child_grade[1]}")
                 child_name_list.append(child_grade[1])
                 child_id_list.append(child_grade[0])
+                self.child_grades_not_scales.append(child_grade[2])
 
             if not sum:
                 scale_factor = 0
@@ -210,7 +214,7 @@ class PieChart:
         print(dy)
         # get the current center:
         if len(self.outer_pie_objs[0]) > 0:
-            #pdb.set_trace()
+
             current_center = self.outer_pie_objs[0][0].center
         else:
             current_center = (0, 0)
@@ -309,6 +313,7 @@ class PieChart:
 
         self.plot_pie(self.zoom_slider.get(), 0, 0)
         self.new_window.destroy()
+        self.GET_grade_data()
 
     def AddGrade_Weight(self):
 
@@ -331,6 +336,7 @@ class PieChart:
         self.submit_new_grade = tk.Button(self.new_window, text='Neue Note eintragen', command=self.submit)
         self.submit_new_grade.pack()
         self.widget_list_new_window.append(self.submit_new_grade)
+        self.GET_grade_data()
 
     def submit(self):
         sql_insert_grade_into_grades = """INSERT INTO Grades (grade_name, grade_weight, course_id, child_of) VALUES(?, ?, ?, ?)"""
@@ -348,11 +354,16 @@ class PieChart:
         self.plot_pie(self.zoom_slider.get(), 0, 0)
 
         # update courseInfo Frame
+        self.GET_grade_data()
         self.courseinfo_obj.Clear_CourseInfo()
         self.courseinfo_obj.GET_CourseInfo()
         self.new_window.destroy()
 
+
     def on_click(self, event):
+        """Method is executed, if a inner wedge, outer wedge or its corresponding text is clicked. It then provides tk entry-widgets,
+        which allow to change the weight or name of the grade/category. It also provides a button to delete the grade/category
+        """
         # screen position at which was clicked
         x_pos_of_clicking = event.mouseevent.x
         y_pos_of_clicking = event.mouseevent.y
@@ -408,15 +419,24 @@ class PieChart:
                     if isinstance(widget, tk.Entry):
                         widget.pack_forget()
 
-                self.edited_weight.set(str(self.child_weight_tuple[i]))
+                self.edited_weight.set(str(self.child_grades_not_scales[i]))
                 self.entry_field_new_wedge = tk.Entry(self.canvas.get_tk_widget(), textvariable=self.edited_weight)
                 self.widgets_in_canvas.append(self.entry_field_new_wedge)
 
                 self.entry_field_new_wedge.place(x=x_pos_of_clicking, y=500-y_pos_of_clicking)
+
+                pos_of_delimiter = self.child_name_tuple[i].find(',')
+                self.grade_id = self.child_name_tuple[i][0:pos_of_delimiter]
+
+                self.del_child_grade_button = tk.Button(self.canvas.get_tk_widget(), text='Löschen', command=self.del_from_db)
+                self.widgets_in_canvas.append(self.del_child_grade_button)
+
+                self.del_child_grade_button.place(x=x_pos_of_clicking, y=500-y_pos_of_clicking-self.entry_field_new_wedge.winfo_height()-30)
                 self.Weight_pos = i
 
                 def func(event):
-                    self.entry_input_handler(event, 1)
+                    self.entry_input_handler(event, 1, self.del_child_grade_button)
+
 
                 self.entry_field_new_wedge.bind('<KeyPress>', func)
 
@@ -445,7 +465,7 @@ class PieChart:
                 self.Weight_pos = i
 
                 def func(event):
-                    self.entry_input_handler(event, 2)
+                    self.entry_input_handler(event, 2, self.del_parent_grade_button)
 
                 self.entry_field_new_wedge.bind('<KeyPress>', func)
 
@@ -460,10 +480,13 @@ class PieChart:
 
         self.plot_pie(self.zoom_slider.get(), 0, 0)
         self.remove_widget_from_screen(self.widgets_in_canvas)
+        self.GET_grade_data()
+        self.courseinfo_obj.Clear_CourseInfo()
+        self.courseinfo_obj.GET_CourseInfo()
 
 
-
-    def entry_input_handler(self, event, update_pos):
+    def entry_input_handler(self, event, update_pos, button_obj):
+        button_obj.destroy()
         # Weight_pos is the Position of the edit weight:
         i = self.Weight_pos
         if update_pos == 1:
@@ -495,7 +518,7 @@ class PieChart:
             params = (new_grade_name, int(grade_id))
             self.db_connection.addToDatabase(sql_update_grade_name, params)
             entry_field.destroy()
-            self.plot_pie()
+            self.plot_pie(self.zoom_slider.get(), 0, 0)
             # update courseInfo Frame
             self.courseinfo_obj.Clear_CourseInfo()
             self.courseinfo_obj.GET_CourseInfo()
