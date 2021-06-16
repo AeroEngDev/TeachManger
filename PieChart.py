@@ -10,6 +10,15 @@ import numpy as np
 class PieChart:
 
     def __init__(self, root, db_connection, Course_obj, courseinfo_obj):
+        """ PieChart plots the grade weights in a matplotlib Pie Chart
+        and allows to add and delete grade weights and grade categories
+
+        The Pie Chart is nested: Contains of a pie and a donut.
+        The Donut shows the weight of the grade category and the
+        pie shows the weight in the category
+        """
+
+        # init members of PieChart Class:
         self.widgets_in_canvas = []
         self.widget_list_new_window = []
         self.widget_list_new_window_2 = []
@@ -19,42 +28,38 @@ class PieChart:
         self.Course_obj = Course_obj
         self.new_window = tk.Toplevel()
         self.new_window.withdraw()
+        self.root = root
+        self.courseinfo_obj = courseinfo_obj
 
-        self.outer_pie_objs = None
+        self.outer_pie_objs = [(), ()]
+        global photo
+        photo = tk.PhotoImage(file="plus_button.gif")
+
 
         self.GET_grade_data()
-
-        self.fig = Figure(figsize=(10, 5), dpi=100)
-        self.axes = self.fig.add_axes([0.1, 0.1, 0.8, 0.8])
-
+        self.init_buttons_in_canvas()
+        self.init_event_handlers()
         # create a nested pie chart
         self.plot_pie(1, 0, 0)
 
-        self.root = root
+    def init_buttons_in_canvas(self):
+        """adds a plus button to add a new grade category or a grade to a existing grade category.
+        Furthermore a slider is added, which allows the user to zoom in and out of the pie Chart
+        """
+        self.fig = Figure(figsize=(10, 5), dpi=100)
+        self.axes = self.fig.add_axes([0.1, 0.1, 0.8, 0.8])
 
-        canvas = FigureCanvasTkAgg(self.fig, master=root)
-        canvas.get_tk_widget().pack()
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas.get_tk_widget().pack()
 
-        # save variables in self:
-        #self.wedges = wedges
-
-        self.canvas = canvas
-
-        self.courseinfo_obj = courseinfo_obj
-        global photo
-        photo = tk.PhotoImage(file="plus_button.gif")
         self.plus_button = tk.Button(self.canvas.get_tk_widget(), image=photo, command=self.new_window_for_new_grade)
-        #self.plus_button.grid(column=0, row=0, stick='nw')
+
         self.plus_button.place(x=0, y=0)
         # create a slider to zoom in and out into the grade pie:
-        self.zoom_slider = ttk.Scale(self.canvas.get_tk_widget(), from_=0.1, to=10, orient=tk.VERTICAL, command=self.zoom_with_mousewheel, length=300)
-        #self.zoom_slider.grid(column=0, row=1, sticky="w")
-        self.zoom_slider.place(x=0, y=100)
+        self.zoom_slider = ttk.Scale(self.canvas.get_tk_widget(), from_=0.5, to=10, orient=tk.VERTICAL, command=self.zoom_with_mousewheel, length=300)
 
-        # self.AddParentGrade_Button = tk.Button(self.canvas.get_tk_widget(), text='Neue Notenkategorie hinzufügen', command=self.Add_Parent_Grade)
-        # self.AddGradeWeight_Button = tk.Button(self.canvas.get_tk_widget(), text='Neue Note hinzufügen', command=self.AddGrade_Weight)
-        # self.AddParentGrade_Button.place(x=0, y=450)
-        # self.AddGradeWeight_Button.place(x=300, y=450)
+        self.zoom_slider.place(x=0, y=100)
+        self.zoom_slider.set(1)
 
     def zoom_with_mousewheel(self, value):
         self.plot_pie(value, 0, 0)
@@ -105,11 +110,15 @@ class PieChart:
 
 
     def get_parent_grades(self):
-        sql_select_parent_grade_info = "SELECT grade_id, grade_name, grade_weight FROM Grades WHERE grade_id = child_of"
-        parent_grade_info = self.db_connection.GetFromDatabase(sql_select_parent_grade_info, ())
+        """ Get a list containing name, weight and grade_list of the grade category
+        """
+        sql_select_parent_grade_info = "SELECT grade_id, grade_name, grade_weight FROM Grades WHERE grade_id = child_of AND course_id = ?"
+        parent_grade_info = self.db_connection.GetFromDatabase(sql_select_parent_grade_info, (self.Course_obj.Get_CourseID(),))
         return parent_grade_info
 
     def GET_grade_data(self):
+        """
+        """
         dict_parents_and_childs = {}
         dict_parent_weights = {}
 
@@ -121,12 +130,14 @@ class PieChart:
             dict_parents_and_childs[parent_grade[0]] = []
             dict_parent_weights[parent_grade[0]] = (parent_grade[0], parent_grade[1], parent_grade[2])
 
+        # get the grade weights
         sql_get_grade_weights_from_grades = """SELECT grade_id, grade_name, grade_weight, child_of FROM Grades WHERE course_id = ? """
         grade_names_and_weights = self.db_connection.GetFromDatabase(sql_get_grade_weights_from_grades, (self.Course_obj.Get_CourseID(),))
 
         parent_id_list = []
         grade_weights = []
         self.dict_parent_id_child_wedges = {}
+
         for current in grade_names_and_weights:
 
             if current[3] == current[0]:
@@ -180,6 +191,7 @@ class PieChart:
             for element in list:
                 child_list_weights.append(element)
 
+
         self.child_id_list = tuple(child_id_list)
         self.child_name_tuple = tuple(child_id_name_list)
         self.child_names_only = tuple(child_name_list)
@@ -192,18 +204,19 @@ class PieChart:
         self.dict_k_children_v_parent = dict_k_children_v_parent
         self.parent_id_list = parent_id_list
 
-
     def plot_pie(self, radius, dx, dy):
-
+        print(radius)
+        print(dx)
+        print(dy)
         # get the current center:
-        if self.outer_pie_objs is not None:
-
+        if len(self.outer_pie_objs[0]) > 0:
+            #pdb.set_trace()
             current_center = self.outer_pie_objs[0][0].center
         else:
             current_center = (0, 0)
-        #pdb.set_trace()
+
         # calculate new center:
-        new_center = ((current_center[0]+dx)*10, (current_center[1]+dy)*10)
+        new_center = ((current_center[0]+dx), (current_center[1]+dy))
 
         self.radius = float(radius)
         pie_objs = []
@@ -213,29 +226,38 @@ class PieChart:
         colors = []
         for i in self.parent_grade_weight_tuple:
             colors.append('white')
+
         self.outer_pie_border = self.axes.pie(self.parent_grade_weight_tuple, colors=colors, center=new_center, radius=self.radius*1.3, wedgeprops=dict(edgecolor='b'))
+        self.axes.set_xlim(10, 0)
+        # create the outer pie:
 
-        # create the outer pie:s
         self.outer_pie_objs = self.axes.pie(self.parent_grade_weight_tuple, radius=self.radius, center=new_center, labels=self.parent_grade_name_tuple, wedgeprops=dict(edgecolor='w', width=0.3))
+        # this if clause is needed when a new course without grades is created
+        # because a new course is initialized with 2 grade categories but without grades
         self.outer_wedges = self.outer_pie_objs[0]
+        if len(self.parent_id_list) > 0:
+            dict_parent_id_wedges = {}
 
-        dict_parent_id_wedges = {}
-        for i, parent_wedge in enumerate(self.outer_wedges):
-            dict_parent_id_wedges[self.parent_id_list[i]] = parent_wedge
+            for i, parent_wedge in enumerate(self.outer_wedges):
+                dict_parent_id_wedges[self.parent_id_list[i]] = parent_wedge
 
-        pie_objs[0:0] = self.outer_wedges
-        self.outer_wedges_names = self.outer_pie_objs[1]
-        pie_objs[len(pie_objs):len(pie_objs)] = self.outer_wedges_names
-        # create the inner pie
+            pie_objs[0:0] = self.outer_wedges
+            self.outer_wedges_names = self.outer_pie_objs[1]
+            pie_objs[len(pie_objs):len(pie_objs)] = self.outer_wedges_names
+            # create the inner pie
+
+        else:
+            self.inner_wedges = []
+
         self.inner_pie_objs = self.axes.pie(self.child_weight_tuple, radius=0.5*self.radius, center=new_center, labels=self.child_name_tuple, autopct='%1.1f%%', wedgeprops=dict(edgecolor='w'))
-        self.axes.set(aspect="equal", title='Notengewichtung')
         self.inner_wedges = self.inner_pie_objs[0]
-
+        self.axes.set(aspect="equal", title='Notengewichtung')
 
         # dict_parent_id_child_wedges = {}
+
         for i, matplotlib_wedge in enumerate(self.inner_wedges):
-            grade_id = self.child_id_list[i]
-            parent_id = self.dict_k_children_v_parent[grade_id]
+
+            parent_id = self.dict_k_children_v_parent[self.child_id_list[i]]
             self.dict_parent_id_child_wedges[parent_id].append(matplotlib_wedge)
 
         for key, value in self.dict_parent_id_child_wedges.items():
@@ -267,6 +289,7 @@ class PieChart:
         self.fig.canvas.draw_idle()
 
 
+
     def Add_Parent_Grade(self):
         # # Build a distinct paretn grade name:
         # sql_count_objects_in_grades = "COUNT(SELECT grade_id FROM Grades)"
@@ -284,7 +307,7 @@ class PieChart:
 
         self.db_connection.addToDatabase(sql_update_parent_grade, (grade_id_of_parent_grade[0][0], grade_id_of_parent_grade[0][0]))
 
-        self.plot_pie(self.zoom_slider.get())
+        self.plot_pie(self.zoom_slider.get(), 0, 0)
         self.new_window.destroy()
 
     def AddGrade_Weight(self):
@@ -322,7 +345,7 @@ class PieChart:
         self.submit_new_grade.pack_forget()
 
         # plot the new pie
-        self.plot_pie(self.zoom_slider.get())
+        self.plot_pie(self.zoom_slider.get(), 0, 0)
 
         # update courseInfo Frame
         self.courseinfo_obj.Clear_CourseInfo()
@@ -418,7 +441,7 @@ class PieChart:
                 self.del_parent_grade_button = tk.Button(self.canvas.get_tk_widget(), text='Löschen', command=self.del_from_db)
                 self.widgets_in_canvas.append(self.del_parent_grade_button)
 
-                self.del_parent_grade_button.place(x=x_pos_of_clicking, y=500-y_pos_of_clicking-self.entry_field_new_wedge.winfo_height()-15)
+                self.del_parent_grade_button.place(x=x_pos_of_clicking, y=500-y_pos_of_clicking-self.entry_field_new_wedge.winfo_height()-30)
                 self.Weight_pos = i
 
                 def func(event):
@@ -434,7 +457,8 @@ class PieChart:
 
         sql_del_grade = "DELETE FROM Grades WHERE grade_id = ?"
         self.db_connection.addToDatabase(sql_del_grade, (self.grade_id, ))
-        self.plot_pie(self.zoom_slider.get())
+
+        self.plot_pie(self.zoom_slider.get(), 0, 0)
         self.remove_widget_from_screen(self.widgets_in_canvas)
 
 
@@ -456,7 +480,7 @@ class PieChart:
                 sql_update_grade_weight = "UPDATE Grades SET grade_weight = ? WHERE grade_id = ?"
                 params_for_update = (edited_weight, int(grade_id))
                 self.db_connection.addToDatabase(sql_update_grade_weight, params_for_update)
-                self.plot_pie(self.zoom_slider.get())
+                self.plot_pie(self.zoom_slider.get(), 0, 0)
                 # update courseInfo Frame
                 self.courseinfo_obj.Clear_CourseInfo()
                 self.courseinfo_obj.GET_CourseInfo()
@@ -479,7 +503,7 @@ class PieChart:
 
     def drag_pies(self, event):
         # store the location of the button press:
-        #pdb.set_trace()
+
         self.press = event.x, event.y
 
     def on_motion(self, event):
@@ -496,7 +520,7 @@ class PieChart:
 
     def init_event_handlers(self):
         self.press = None
-        self.fig.canvas.mpl_connect('pick_event', lambda event: self.on_click(event))
+        self.canvas.mpl_connect('pick_event', lambda event: self.on_click(event))
         self.canvas.mpl_connect('button_press_event', self.drag_pies)
         self.canvas.mpl_connect('motion_notify_event', self.on_motion)
         self.canvas.mpl_connect('button_release_event', self.on_release)

@@ -5,14 +5,14 @@ import pdb
 
 class Student:
 
-    def __init__(self, forname, surname, SchoolYear, Tutor):
+    def __init__(self, forname, surname, SchoolYear, Tutor, db_connection):
 
         self.forname = forname
         self.surname = surname
         self.SchoolYear = SchoolYear
         self.Tutor = Tutor
-
-        self.db_conn = DB_con()
+        self.db_conn = db_connection
+        #self.db_conn = DB_con()
         self.db_conn.CreateStudentsTable()
 
         ## its better to check the id, than all the other entries!!

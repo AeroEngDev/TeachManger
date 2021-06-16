@@ -59,7 +59,7 @@ class init:
             self.pos_in_msg += 1
             self.msg_found_one_db.grid(column=0, row=self.pos_in_msg)
 
-            self.crypto_obj = work_with_crypto(database[0], self.content_frame)
+            self.crypto_obj = work_with_crypto(databases[0], self.content_frame, self.pos_in_msg)
             self.pos_in_msg = self.crypto_obj.get_row_counter()
 
         elif len(databases) > 1:

@@ -14,7 +14,8 @@ class excel_interact:
 
         # split path and filename:
         path: Path = Path(path_name)
-        split_path = os.path.split(path)
+        #pdb.set_trace()
+        split_path = os.path.split(path_name)
         os.chdir(split_path[0])
 
         self.filename = split_path[1]
@@ -38,7 +39,6 @@ class excel_interact:
     def read(self):
         workbook = pyxl.load_workbook(filename=self.filename)
 
-
         # get a sheet object:
         sheet_obj = workbook.active
 
@@ -52,20 +52,22 @@ class excel_interact:
         stud_grades_dict = {}
 
         # read the table columnwise:
-        for k in range(sheet_obj.min_row, dimension[0]+1):
+        for k in range(1, dimension[0]+1):
             read_data_entity_list = []
-            for i in range(sheet_obj.min_column, dimension[1]+1):
-                if k == sheet_obj.min_row:
-                    stud_grades_dict[sheet_obj.cell(row=sheet_obj.min_row, column=i).value] = []
+            for i in range(1, dimension[1]+1):
+                if k == 1:
+                    stud_grades_dict[sheet_obj.cell(row=1, column=i).value] = []
                 else:
                     if sheet_obj.cell(row=k, column=i).value is not None:
-                        stud_grades_dict[sheet_obj.cell(row=sheet_obj.min_row, column=i).value].append(sheet_obj.cell(row=k, column=i).value)
-                    else:
-                        stud_grades_dict[sheet_obj.cell(row=sheet_obj.min_row, column=i).value].append('')
-            # read_data_entity_tuple = tuple(read_data_entity_list)
-            # if read_data_entity_tuple != ():
-            #     read_data_list.append(read_data_entity_tuple)
-        return stud_grades_dict
+                        current_key_value = sheet_obj.cell(row=1, column=i).value
+                        if current_key_value is None:
+                            current_key_value = i
+
+                        stud_grades_dict[current_key_value].append(sheet_obj.cell(row=k, column=i).value)
+            read_data_entity_tuple = tuple(read_data_entity_list)
+            if read_data_entity_tuple != ():
+                read_data_list.append(read_data_entity_tuple)
+        return [read_headings_list, read_data_list]
 
     def draw_pie_plot(self, workbook, grade_weight_data):
 

@@ -16,18 +16,21 @@ import pdb
 class CourseInfo:
 
     def __init__(self, db_connection, SelectedCourse_obj, root, child_window, current_display_size):
+
+        # init member vars of CourseInfo:
         self.db_connection = db_connection
-        self.Frame_Obj = root
-        self.root = root[1]
-        self.PieFrame = root[2]
-        self.MaintanceFrame = root[3]
+        self.Frame_Objs = root
+        self.CourseInfoFrame = root[2]
+        self.PieFrame = root[3]
+        self.MaintanceFrame = root[4]
         self.CourseName = SelectedCourse_obj.Get_CourseName()
         self.SelectedCourse_obj = SelectedCourse_obj
         self.child_window = child_window
 
+        self.CourseInfoFrame = self.Frame_Objs[2]
+
         # init heading frame and scrollbars:
-        self.CourseInfoFrame = self.root
-        self.course_info_heading_frame = tk.Frame(self.CourseInfoFrame, width=current_display_size[0]/2, height=50, relief=tk.SUNKEN, bd=1)
+        self.course_info_heading_frame = tk.Frame(self.CourseInfoFrame, relief=tk.SUNKEN, bd=1, width=current_display_size[0]/2)
         self.course_info_heading_frame.grid(column=0, row=0, sticky='n')
 
         photo = tk.PhotoImage(file="plus_button.gif")
@@ -43,7 +46,6 @@ class CourseInfo:
         edit_mode_photo = tk.PhotoImage(file="edit_pictogram.gif")
         self.edit_mode_button = tk.Button(self.course_info_heading_frame, image=edit_mode_photo, command=self.click_edit_mode_button)
         self.edit_mode_button.image = edit_mode_photo
-        #self.view_mode_button.grid(column=2, row=0)
 
         # Button for exporting the sheet to excel
         export_excel_photo = tk.PhotoImage(file="excel_export.gif")
@@ -54,11 +56,11 @@ class CourseInfo:
         self.label_heading_student_info = ttk.Label(self.course_info_heading_frame, text='Teilnehmende und Notenpunkte im Kurs', style="My.TLabel")
         self.label_heading_student_info.grid(column=4, row=0)
         # to make the scrollbar happen, we need a canvas inside the course info frame
-        self.course_info_frame_canvas = tk.Canvas(self.CourseInfoFrame, width=current_display_size[0]/2, height=500)
+        self.course_info_frame_canvas = tk.Canvas(self.CourseInfoFrame, width=current_display_size[0]/2)
         self.course_info_frame_canvas.grid(column=0, row=1, sticky='nw')
         # create a horizontal scrollbar for the course info Frame:
         self.hscrollbar = tk.Scrollbar(self.CourseInfoFrame, orient=tk.HORIZONTAL, command=self.course_info_frame_canvas.xview)
-        self.hscrollbar.grid(column=0, row=2, columnspan=2, sticky='ew')
+        self.hscrollbar.grid(column=0, row=1, columnspan=2, sticky='ew')
 
         self.vscrollbar = tk.Scrollbar(self.CourseInfoFrame, orient=tk.VERTICAL, command=self.course_info_frame_canvas.yview)
         self.vscrollbar.grid(column=2, row=0, sticky='e', rowspan=2)
@@ -66,8 +68,8 @@ class CourseInfo:
         # configure the axes
         self.course_info_frame_canvas.configure(xscrollcommand=self.hscrollbar.set, scrollregion=(0, 0, 2000,2000), yscrollcommand=self.vscrollbar.set)
         self.course_info_frame_canvas.bind('<Configure>', lambda e: self.course_info_frame_canvas.bbox("all"))
-        # course_info_frame_canvas.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
-        self.second_frame = tk.Frame(self.course_info_frame_canvas, bd=1, relief=tk.SUNKEN)
+
+        self.second_frame = tk.Frame(self.course_info_frame_canvas, bd=1, relief=tk.SUNKEN, width=current_display_size[0]/2)
 
         self.course_info_frame_canvas.create_window((0, 0), window=self.second_frame, anchor='nw')
 
@@ -76,13 +78,13 @@ class CourseInfo:
         self.PieChart_obj.init_event_handlers()
         self.dict_child_grade_id_matplotlib_obj = self.PieChart_obj.dict_child_grade_id_matplotlib_obj
 
-        self.root = self.second_frame
+        self.CourseInfoFrame = self.second_frame
 
         # Get the Infos about this course ouf of the db
         self.GET_CourseInfo()
 
         # init the view mode:
-        self.read_mode_obj = read_mode(self.root)
+        self.read_mode_obj = read_mode(self.CourseInfoFrame)
         self.view_treeview_obj = self.read_mode_obj.build_treeview(self.dict_view_mode)
         #MaintainCourses_Menu(self.Frame_Obj, db_connection, self.SelectedCourse_obj, self.edited_text, self.entryWidget_list, self, child_window)
 
@@ -173,93 +175,9 @@ class CourseInfo:
             self.active_widgets_import_export.append(self.submit_button)
 
     def import_excel_file(self):
-        widgets_in_content_frame = self.excel_window_content_frame.winfo_children()
-        for widget in widgets_in_content_frame:
-            widget.grid_forget()
-        self.desc_for_imported_data = tk.Label(self.excel_window_content_frame, text=f'Eingelesene Daten aus {self.excel_filename}:')
-        self.desc_for_imported_data.grid(column=0, row=0)
         excel_obj = excel_interact(self.excel_filename)
-        self.spreadsheet_data_dict = excel_obj.read()
+        excel_obj.read()
 
-        treeview_of_spreadsheet = read_mode(self.excel_window_content_frame)
-        self.treeview_spreadsheet_data_widget = treeview_of_spreadsheet.build_treeview(self.spreadsheet_data_dict)
-        self.treeview_spreadsheet_data_widget.grid(column=0, row=1)
-
-        # iterate through the columns, get the postition of the columns and place a Checkbutton:
-        self.checkbutton_of_imported_columns = []
-        for column_name in self.spreadsheet_data_dict.keys():
-            self.position = self.treeview_spreadsheet_data_widget.bbox(item='0', column=column_name)
-            self.checkbutton_of_imported_columns.append(tk.Checkbutton(self.excel_window_content_frame, text=''))
-            try:
-                self.checkbutton_of_imported_columns[len(self.checkbutton_of_imported_columns)-1].place(x=self.position[0], y=self.position[1])
-            except:
-                pass
-        self.compare_import_data_and_db_data()
-
-    def compare_import_data_and_db_data(self):
-        self.status_label_check_headings_of_imported_data = tk.Label(self.excel_window_content_frame, text='Vergleiche die Spalten Namen des Spreadsheets mit denen der Datenbank...')
-        self.status_label_check_headings_of_imported_data.grid(column=0, row=2)
-        label_spreadsheet_column = tk.Label(self.excel_window_content_frame, text='Spreadsheet Spalten-Überschrift')
-        label_spreadsheet_column.grid(column=0, row=3)
-        label_db_column = tk.Label(self.excel_window_content_frame, text='Datenbank Spalten-Überschrift')
-        label_db_column.grid(column=2, row=3)
-        imported_column_label_list = []
-        self.list_of_listboxes = []
-        self.list_of_listboxes_var = []
-        option_menu_items = list(self.dict_view_mode.keys())
-        number_of_hits = 0
-        self.list_of_unallocated_spreadsheet_columns = list(self.spreadsheet_data_dict.keys())
-        for pos_spreadsheet, imported_column in enumerate(self.spreadsheet_data_dict.keys()):
-            imported_column_label_list.append(tk.Label(self.excel_window_content_frame, text=imported_column))
-            imported_column_label_list[len(imported_column_label_list)-1].grid(column=0, row=3+len(imported_column_label_list))
-            arrow = tk.Label(self.excel_window_content_frame, text='->')
-            arrow.grid(column=1, row=3+len(imported_column_label_list))
-            self.list_of_listboxes_var.append(tk.StringVar())
-            self.list_of_listboxes.append(tk.OptionMenu(self.excel_window_content_frame, self.list_of_listboxes_var[len(self.list_of_listboxes_var)-1], *option_menu_items, command=self.changed_option_menu))
-
-            self.list_of_listboxes[len(self.list_of_listboxes)-1].grid(column=2, row=3+len(imported_column_label_list))
-            if imported_column in self.dict_view_mode.keys():
-                self.list_of_listboxes_var[len(self.list_of_listboxes_var)-1].set(imported_column)
-                self.list_of_unallocated_spreadsheet_columns.remove(imported_column)
-                number_of_hits += 1
-
-        self.show_number_of_hits = tk.Label(self.excel_window_content_frame, text=f'Es wurden {number_of_hits} von {len(self.spreadsheet_data_dict.keys())} Spalten zugeordnet.')
-        self.show_number_of_hits.grid(column=0, row=3+len(imported_column_label_list)+1)
-        row_pos_excel_window = 3+len(imported_column_label_list)
-        if len(option_menu_items) < len(list(self.spreadsheet_data_dict.keys())):
-            self.label_more_spreadsheet_data_than_db = tk.Label(self.excel_window_content_frame, text='Es wurden mehr Spalten im Spreadsheet gefunden, als in der Datenbank vorhanden sind.')
-            self.label_more_spreadsheet_data_than_db_2 = tk.Label(self.excel_window_content_frame, text='Wenn alle Spalten eingelesen werden soll, müssen weitere Notenspalten in der Datenabnk definiert werden')
-            row_pos_excel_window += 1
-            self.label_more_spreadsheet_data_than_db.grid(column=0, row=row_pos_excel_window)
-            row_pos_excel_window += 1
-            self.label_more_spreadsheet_data_than_db_2.grid(column=0, row=row_pos_excel_window)
-            self.label_add_db_column = tk.Label(self.excel_window_content_frame, text='Neue Notenspalten zur Datenbank hinzufügen:')
-            row_pos_excel_window += 1
-            self.label_add_db_column.grid(column=0, row=row_pos_excel_window)
-            self.list_of_unallocated_column_entries = []
-            self.list_of_unallocated_column_entries_var = []
-            self.unallocated_column_button = []
-            for unallocated_column in self.list_of_unallocated_spreadsheet_columns:
-                self.list_of_unallocated_column_entries_var.append(tk.StringVar())
-                self.list_of_unallocated_column_entries_var[len(self.list_of_unallocated_column_entries_var)-1].set(unallocated_column)
-                self.list_of_unallocated_column_entries.append(tk.Entry(self.excel_window_content_frame, textvariable=self.list_of_unallocated_column_entries_var[len(self.list_of_unallocated_column_entries_var)-1]))
-                row_pos_excel_window += 1
-                pdb.set_trace()
-                self.list_of_unallocated_column_entries[len(self.list_of_unallocated_column_entries)-1].grid(column=0, row=row_pos_excel_window)
-                self.unallocated_column_button.append(tk.Button(self.excel_window_content_frame))
-                self.unallocated_column_button[len(self.unallocated_column_button)-1].grid(column=1, row=row_pos_excel_window)
-            self.PieChart_obj.new_window_for_new_grade()
-
-
-
-    def changed_option_menu(self, event):
-        # if the option menus are changed the counter of allocated columns is increased:
-        counter_of_hits = 0
-        for option_menu_var in self.list_of_listboxes_var:
-            if option_menu_var.get() != '':
-                counter_of_hits += 1
-        self.number_of_hits = counter_of_hits
-        self.show_number_of_hits.config(text=f'Es wurden {self.number_of_hits} von {len(self.spreadsheet_data_dict.keys())} Spalten zugeordnet.')
 
     def submit_excel_export(self):
         self.excel_window_obj = excel_interact(self.file_name_var.get())
@@ -368,7 +286,7 @@ class CourseInfo:
 
     def Clear_Frame(self):
         # remove widgets in CourseInfor Frame
-        for Widget in self.root.winfo_children():
+        for Widget in self.CourseInfoFrame.winfo_children():
             Widget.destroy()
         # remove widgets in Pie Frame
         for Widget in self.PieFrame.winfo_children():
@@ -376,7 +294,7 @@ class CourseInfo:
 
     def Clear_CourseInfo(self):
         # remove widgets in CourseInfor Frame
-        for Widget in self.root.winfo_children():
+        for Widget in self.CourseInfoFrame.winfo_children():
             Widget.destroy()
 
     def Get_Vars(self):
@@ -396,25 +314,25 @@ class CourseInfo:
             self.entryWidget_list = []
             self.edited_text = []
             self.column_desc_list = []
-            self.column_desc_list.append(tk.Label(self.root, text='Student ID'))
+            self.column_desc_list.append(tk.Label(self.CourseInfoFrame, text='Student ID'))
             self.column_desc_list[0].grid(row=0, column=0)
-            self.column_desc_list.append(tk.Label(self.root, text='Vorname'))
+            self.column_desc_list.append(tk.Label(self.CourseInfoFrame, text='Vorname'))
 
             self.column_desc_list[1].grid(row=0, column=1)
-            self.column_desc_list.append(tk.Label(self.root, text='Nachname'))
+            self.column_desc_list.append(tk.Label(self.CourseInfoFrame, text='Nachname'))
             self.column_desc_list[2].grid(row=0, column=2)
 
             i = 1
             for grade_id, grade_name in self.grade_names.items():
-                self.column_desc_list.append(tk.Label(self.root, text=f"{grade_id}, {grade_name}"))
+                self.column_desc_list.append(tk.Label(self.CourseInfoFrame, text=f"{grade_id}, {grade_name}"))
 
                 self.column_desc_list[2+i].grid(row=0, column=2+i)
                 i = i+1
 
-            self.column_desc_list.append(tk.Label(self.root, text='Gesamtpunkte'))
+            self.column_desc_list.append(tk.Label(self.CourseInfoFrame, text='Gesamtpunkte'))
             self.column_desc_list[len(self.column_desc_list)-1].grid(row=0, column=len(self.column_desc_list)-1)
 
-            self.column_desc_list.append(tk.Label(self.root, text='Löschen'))
+            self.column_desc_list.append(tk.Label(self.CourseInfoFrame, text='Löschen'))
             self.column_desc_list[len(self.column_desc_list)-1].grid(row=0, column=len(self.column_desc_list)-1)
             # a dict where the keys are the stud_id and the values are the end grade:
             self.dict_stud_id_end_grade = {}
@@ -428,38 +346,38 @@ class CourseInfo:
                 # Build the label field for the student id
                 self.edited_text_set.append(tk.StringVar())
                 self.edited_text_set[0].set(student[0])
-                self.entryWidget_list_set.append(tk.Label(self.root, text=self.edited_text_set[0].get()))
+                self.entryWidget_list_set.append(tk.Label(self.CourseInfoFrame, text=self.edited_text_set[0].get()))
                 self.entryWidget_list_set[0].grid(column=0, row=i+1)
 
                 # build the entry field for the forname
                 self.edited_text_set.append(tk.StringVar())
                 self.edited_text_set[1].set(student[1])
-                self.entryWidget_list_set.append(tk.Entry(self.root, textvariable=self.edited_text_set[1]))
+                self.entryWidget_list_set.append(tk.Entry(self.CourseInfoFrame, textvariable=self.edited_text_set[1]))
                 self.entryWidget_list_set[1].grid(column=1, row=i+1)
 
                 # build the entry field for the surname
                 self.edited_text_set.append(tk.StringVar())
                 self.edited_text_set[2].set(student[2])
-                self.entryWidget_list_set.append(tk.Entry(self.root, textvariable=self.edited_text_set[2]))
+                self.entryWidget_list_set.append(tk.Entry(self.CourseInfoFrame, textvariable=self.edited_text_set[2]))
                 self.entryWidget_list_set[2].grid(column=2, row=i+1)
                 j = 1
                 end_grade = 0
                 for grade_id, grade_name in self.grade_names.items():
                     self.edited_text_set.append(tk.StringVar())
-                    self.entryWidget_list_set.append(tk.Entry(self.root, textvariable=self.edited_text_set[len(self.edited_text_set)-1]))
+                    self.entryWidget_list_set.append(tk.Entry(self.CourseInfoFrame, textvariable=self.edited_text_set[len(self.edited_text_set)-1]))
                     self.entryWidget_list_set[len(self.entryWidget_list_set)-1].bind("<Return>", lambda event: self.Update(event))
                     self.entryWidget_list_set[len(self.entryWidget_list_set)-1].grid(column=2+j, row=i+1)
                     # insert grade for the grade_id
                     for key, value in self.dict_student_grade_id_value[student[0]].items():
                         if key == grade_id:
                             self.edited_text_set[len(self.edited_text_set)-1].set(value)
-                            #pdb.set_trace()
+
                             end_grade = end_grade + float(self.dict_child_grade_id_matplotlib_obj[key].get_text()[0:len(self.dict_child_grade_id_matplotlib_obj[key].get_text())-1])/100*value
 
                     j = j + 1
 
                 self.edited_text_set.append(tk.StringVar())
-                self.entryWidget_list_set.append(tk.Label(self.root, text=round(end_grade, 2)))
+                self.entryWidget_list_set.append(tk.Label(self.CourseInfoFrame, text=round(end_grade, 2)))
                 self.entryWidget_list_set[len(self.entryWidget_list_set)-1].grid(column=len(self.entryWidget_list_set)-1, row=i+1)
 
                 # build a end_grade_dict, where the keys are the stud_id and the values are the end grade
@@ -471,7 +389,7 @@ class CourseInfo:
                 def func_button(event, self=self, i=i):
                     self.remove_stud_from_course(i)
 
-                self.entryWidget_list_set.append(tk.Button(self.root, image=remove_button_image))
+                self.entryWidget_list_set.append(tk.Button(self.CourseInfoFrame, image=remove_button_image))
                 self.entryWidget_list_set[len(self.entryWidget_list_set)-1].grid(column=len(self.entryWidget_list_set)-1, row=i+1)
                 self.entryWidget_list_set[len(self.entryWidget_list_set)-1].bind('<Button-1>', func_button)
                 # take a extra reference to the image, so the image wont be garbage collected
@@ -482,8 +400,8 @@ class CourseInfo:
 
             return self.edited_text, self.entryWidget_list
         else:
-            self.no_students_in_course_label = tk.Label(self.root, text='Keine Teilnehmenden im Kurs. Bitte neue Teilnehmende hinzufügen!')
-            self.no_students_in_course_label.pack()
+            self.no_students_in_course_label = tk.Label(self.CourseInfoFrame, text='Keine Teilnehmenden im Kurs. Bitte neue Teilnehmende hinzufügen!')
+            self.no_students_in_course_label.grid(column=0, row=0)
             return [], []
 
     def calc_end_grade_current_row(self, current_row):
@@ -567,7 +485,7 @@ class MaintainCourses_Menu(CourseInfo):
 
     def __init__(self, root, db_connection, SelectedCourse_obj, text_obj_of_entries, widget_objects_of_entries, courseInfo_obj, child_window):
         self.Frame_Obj = root
-        self.root = root[3]
+        self.CourseInfoFrame = root[3]
         self.db_connection = db_connection
         self. SelectedCourse_obj = SelectedCourse_obj
 
@@ -578,10 +496,10 @@ class MaintainCourses_Menu(CourseInfo):
         self.entryWidget_list = widget_objects_of_entries
         #self.CourseName = SelectedCourse_obj.GET_CourseName()
 
-        self.Update_Course_Table = tk.Button(self.root, text='Änderungen Speichern', command=self.Start_Update)
+        self.Update_Course_Table = tk.Button(self.CourseInfoFrame, text='Änderungen Speichern', command=self.Start_Update)
         self.Update_Course_Table.grid(column=0, row=0)
         #AddParticipant_BE = AddParticipant(db_connection, CourseName)
-        self.AddNewParticipants = tk.Button(self.root, text='Teilnehmende hinzufügen', command=self.Start_AddPart)
+        self.AddNewParticipants = tk.Button(self.CourseInfoFrame, text='Teilnehmende hinzufügen', command=self.Start_AddPart)
         self.AddNewParticipants.grid(column=1, row=0)
 
         self.CourseName = SelectedCourse_obj.Get_CourseName()
@@ -590,7 +508,7 @@ class MaintainCourses_Menu(CourseInfo):
         add_part = AddParticipant(self.db_connection, self.SelectedCourse_obj, self.course_info_obj, self.child_window)
 
     def Start_Update(self):
-        self.root = self.Frame_Obj[1]
+        self.CourseInfoFrame = self.Frame_Obj[2]
 
         self.column_desc_list, self.edited_text = self.course_info_obj.Get_Vars()
         self.Update()
@@ -761,7 +679,7 @@ class AddParticipant(CourseInfo):
     def submit_changes(self):
         # if checkbox for new participant is activated write new student to table
         if self.add_new_student_to_system.get() == '1':
-            new_stud = Student(self.new_stud_var_list[0].get(), self.new_stud_var_list[1].get(), self.new_stud_var_list[2].get(), self.new_stud_var_list[3].get())
+            new_stud = Student(self.new_stud_var_list[0].get(), self.new_stud_var_list[1].get(), self.new_stud_var_list[2].get(), self.new_stud_var_list[3].get(), self.db_connection)
 
         self.check_students_in_course()
         for i, checkbox_var in enumerate(self.checkbox_var_list):
@@ -815,7 +733,7 @@ class AddParticipant(CourseInfo):
             self.message_window.attributes('-topmost', True)
             user_return = tkinter.messagebox.askyesno(title='Teilnehmer erstellen & eintragen?', message=msg, parent=self.child_window)
             if user_return is True:
-                self.AddedStudent = Student(self.NewPartForname.get(), self.NewPartSurname.get(), self.NewPartYear.get(), self.NewPartTutor.get())
+                self.AddedStudent = Student(self.NewPartForname.get(), self.NewPartSurname.get(), self.NewPartYear.get(), self.NewPartTutor.get(), self.db_connection)
                 self.SelectedCourse_obj.AddStudent(self.AddedStudent.Get_ID())
                 self.AddParticipant_window.destroy()
                 self.Update()
@@ -834,5 +752,5 @@ class AddParticipant(CourseInfo):
                 self.Show_Widgets()
         else:
             self.Hide_Widgets()
-            self.AddedStudent = Student(self.participants_list[0][1], self.participants_list[0][2], self.participants_list[0][3], self.participants_list[0][4])
+            self.AddedStudent = Student(self.participants_list[0][1], self.participants_list[0][2], self.participants_list[0][3], self.participants_list[0][4], self.db_connection)
             self.SelectedCourse_obj.AddStudent(self.AddedStudent.Get_ID())

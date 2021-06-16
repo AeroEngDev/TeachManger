@@ -5,33 +5,34 @@ import tkinter.messagebox
 from Course import Course
 from CourseInfo import CourseInfo
 
+import pdb
 
 class CoursesDropdown_menu:
 
     def __init__(self, db_connection, Framelist, child_window, current_display_size):
-
-
-        DropdownMenuFrame = Framelist[0]
-        CourseInfoFrame = Framelist[1]
-        PieFrame = Framelist[2]
-        AddParticipantFrame = Framelist[3]
-        calender_frame = Framelist[4]
-        self.FrameList = [DropdownMenuFrame, CourseInfoFrame, PieFrame, AddParticipantFrame, calender_frame]
+        # init member vars of CoursesDropdown_menu:
+        self.FrameList = Framelist
         self.courseInfo = None
         self.CourseObj = None
         self.widget_dropdown_CourseNames = None
         self.db_connection = db_connection
-        self.DropdownMenuFrame = DropdownMenuFrame
+        self.DropdownMenuFrame = Framelist[1]
         self.child_window = child_window
         self.current_display_size = current_display_size
-        self.calender_frame = calender_frame
+        self.calender_frame = Framelist[4]
 
+        self.CourseInfoFrame = Framelist[2]
+
+
+    def init_tk_widgets(self):
+        """ Initalize the tk widgets of the Course Selection Frame(Name also used is DropdownMenu Frame)
+        """
         # init heading frame and scrollbars:
-        self.drop_down_heading_frame = tk.Frame(self.DropdownMenuFrame, width=current_display_size[0]/2, height=50)
+        self.drop_down_heading_frame = tk.Frame(self.DropdownMenuFrame, width=self.current_display_size[0]/2, height=50)
         self.dropdown_heading_label = ttk.Label(self.DropdownMenuFrame, text='Ausgewählter Kurs', style="My.TLabel")
         self.dropdown_heading_label.grid(column=0, row=0, sticky='n')
 
-        self.drop_down_frame_canvas = tk.Canvas(self.DropdownMenuFrame, width=current_display_size[0]/2)
+        self.drop_down_frame_canvas = tk.Canvas(self.DropdownMenuFrame, width=self.current_display_size[0]/2)
         self.drop_down_frame_canvas.grid(column=0, row=1, sticky='nw')
         # create a horizontal scrollbar for the course info Frame:
         self.dropdown_hscrollbar = tk.Scrollbar(self.DropdownMenuFrame, orient=tk.HORIZONTAL, command=self.drop_down_frame_canvas.xview)
@@ -102,21 +103,19 @@ class CoursesDropdown_menu:
         self.NewCourseWidgets = [self.Entry_CourseName, self.Entry_CourseYear, self.Entry_CourseContact, self.Entry_CourseNotes, self.SubmitButton]
 
 
-        #self.root = DropdownMenuFrame
-        self.CourseInfoFrame = CourseInfoFrame
-
-        self.refresh_widgets()
 
         # create a button to delete course
         self.delete_course_button = tk.Button(DropdownMenuFrame, text='Kurs löschen', command=self.delete_course)
 
-        self.CourseIDName = self.clicked.get()
+        self.refresh_widgets()
 
-        # call CourseInfo at init, so CourseInfo Frame holds data when the window pops up:
-        self.InspectDropdownValue()
+        self.CourseIDName = self.clicked.get()
 
 
     def refresh_widgets(self):
+
+        """Destroys existing Dropdown Menu and  Creates a new Dropdown Widget to update Courses inside it
+        """
         # if the widget already exists, delete it
         if self.widget_dropdown_CourseNames is not None:
             self.widget_dropdown_CourseNames.destroy()
@@ -126,15 +125,26 @@ class CoursesDropdown_menu:
         self.clicked = tk.StringVar()
         self.clicked.set(self.CourseString_list[0])
         self.widget_dropdown_CourseNames = tk.OptionMenu(self.DropdownMenuFrame, self.clicked, *self.CourseString_list)
-        self.widget_dropdown_CourseNames.grid(column=1, row=0)
+        self.widget_dropdown_CourseNames.grid(column=0, row=1)
         self.clicked.trace("w", self.InspectDropdownValue)
-        #self.widget_dropdown_CourseNames.bind("<ButtonRelease-1>", lambda event: self.InspectDropdownValue(event))
+
+        # load the course, which is selected
+        self.InspectDropdownValue()
 
     def delete_course(self):
+        """If Button Kurs löschen is pressed, course is deleted from db
+        """
         msg = f"Bist du sicher, dass du den Kurs {self.clicked.get()} löschen möchtest?"
         user_return = tkinter.messagebox.askyesno(title='Kurs löschen?', message=msg, parent=self.child_window)
         if user_return is True:
+            sql_delete_grades_where_course_id = "DELETE FROM Grades WHERE course_id = ?"
+            self.db_connection.addToDatabase(sql_delete_grades_where_course_id, (self.CourseObj.Get_CourseID(),))
+            # delete entries in stud_courses which connects courses and students
+            sql_delete_from_stud_courses = "DELETE FROM stud_courses WHERE course_id = ?"
+            sql_delete_from_stud_courses_grades = "DELETE FROM stud_courses_grades WHERE course_id = ?"
             sql_delete_course = "DELETE FROM Courses WHERE course_id = ?"
+            self.db_connection.addToDatabase(sql_delete_from_stud_courses, (self.CourseObj.Get_CourseID(),))
+            self.db_connection.addToDatabase(sql_delete_from_stud_courses_grades, (self.CourseObj.Get_CourseID(),))
             self.db_connection.addToDatabase(sql_delete_course, (self.CourseObj.Get_CourseID(),))
             self.refresh_widgets()
 
@@ -185,7 +195,7 @@ class CoursesDropdown_menu:
 
             self.Course_submit_changes.grid(column=2, row=3)
 
-    def Hide(self):
+    def hide_widgets_for_editing_course_details(self):
 
         self.Description_Label.grid_forget()
         self.CourseID_Description_Label.grid_forget()
@@ -206,14 +216,17 @@ class CoursesDropdown_menu:
         self.Course_submit_changes.grid_forget()
 
     def InspectDropdownValue(self, *args):
-
+        """ Creates an Instance of the Frame containing all grades and student infos (named CourseInfo Frame)
+        """
         if self.courseInfo is not None:
             self.courseInfo.Clear_Frame()
 
+        # if a Course is selected load the course:
         if self.clicked.get() != 'Neuer Kurs':
             if self.Check_Buttons_New_Course() == 1:
-                for Widget in self.NewCourseWidgets:
-                    Widget.destroy()
+                # for Widget in self.NewCourseWidgets:
+                #     Widget.destroy()
+                self.Hide_Buttons_New_Course()
             self.CourseIDName = self.clicked.get()
             # Get CourseID:
             CourseID_pos = self.CourseIDName.find(',')
@@ -231,16 +244,14 @@ class CoursesDropdown_menu:
             self.Show()
             self.CourseObj = Course(self.db_connection, Get_CourseInfo[1], Get_CourseInfo[2], Get_CourseInfo[3], Get_CourseInfo[4], Get_CourseInfo[0])
 
-            # # get the current screen size:
-            # current_display_size = get_display_size()
-
-            #self.child_window.geometry(f"{current_display_size[0]}x{current_display_size[1]}")
             self.courseInfo = CourseInfo(self.db_connection, self.CourseObj, self.FrameList, self.child_window, self.current_display_size)
+
+        # if we set the dropdown menu to New Course, the CourseObj is set to None
+        # to make sure that not the wrong course is edited
         else:
-            # if we set the dropdown menu to New Course, the CourseObj is set to None
-            # to make sure that not the wrong course is edited
+
             self.CourseObj = None
-            self.Hide()
+            self.hide_widgets_for_editing_course_details()
             self.Show_Buttons_New_course()
             if self.Check_Buttons_New_Course() is True:
                 pass
@@ -296,4 +307,5 @@ class CoursesDropdown_menu:
 
     def Check_Buttons_New_Course(self):
         # only check for one Entry Field:
+
         return self.Entry_CourseName.winfo_ismapped()
