@@ -16,11 +16,18 @@ class excel_interact:
         path: Path = Path(path_name)
         #pdb.set_trace()
         split_path = os.path.split(path_name)
-        os.chdir(split_path[0])
+
+        # if only a filename without a path is given,
+        # stay in the cwd
+        if split_path[0] != '':
+            os.chdir(split_path[0])
+
+
 
         self.filename = split_path[1]
 
-    def create(self, dict_data):
+    def create(self, dict_data, import_graph):
+        #pdb.set_trace()
         self.dict_data = dict_data
         workbook = pyxl.Workbook()
         sheet = workbook.active
@@ -32,7 +39,12 @@ class excel_interact:
                 sheet.cell(row=row+2, column=column, value=cell_value)
             column = column + 1
 
-        workbook.save(self.name)
+        if import_graph == 1:
+            img = pyxl.drawing.image.Image("temp.png")
+            img.anchor = 'F1'
+            sheet.add_image(img)
+
+        workbook.save(self.filename)
         return workbook
         #return os.system(f'find {self.name}')
 
@@ -110,6 +122,14 @@ class excel_interact:
         worksheet.add_chart(pie, "G7")
 
         workbook.save(self.name)
+
+# '    def import_pie_chart_image(self, PieChart_obj, filename):
+#         """ Methods calls Pie Chart to export the Canvas as a .png image
+#         """
+#
+#         # call PiePlot export method:
+#         PieChart_obj.export_piechart_as_gif(filename)
+#         self.filename_graph = filename + ".png"'
 
     def get_grade_weight_plot(self):
         # get pie out of self.name

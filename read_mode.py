@@ -41,7 +41,7 @@ class read_mode:
             list_of_list.append(tuple(row_data))
             row_data = []
 
-        pdb.set_trace()
+
         for i, row in enumerate(list_of_list):
             treeview.insert(parent='', index=i, iid=i, text='', values=row)
 

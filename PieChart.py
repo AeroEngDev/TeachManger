@@ -42,6 +42,18 @@ class PieChart:
         # create a nested pie chart
         self.plot_pie(1, 0, 0)
 
+    def export_piechart_as_gif(self):
+        """ Method to export the nested Pie Chart as a gif for saving
+        it to excel
+        """
+
+        # create gif of Canvas with a distinct name
+
+
+        plt.savefig("temp.png")
+
+
+
     def init_buttons_in_canvas(self):
         """adds a plus button to add a new grade category or a grade to a existing grade category.
         Furthermore a slider is added, which allows the user to zoom in and out of the pie Chart
@@ -289,7 +301,7 @@ class PieChart:
         pie_objs[len(pie_objs):len(pie_objs)] = self.inner_wedges_names
         for obj in pie_objs:
             obj.set_picker(True)
-
+        self.export_piechart_as_gif()
         self.fig.canvas.draw_idle()
 
 

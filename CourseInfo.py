@@ -88,9 +88,12 @@ class CourseInfo:
         # init the view mode:
         self.read_mode_obj = read_mode(self.CourseInfoFrame)
         self.view_treeview_obj = self.read_mode_obj.build_treeview(self.dict_view_mode)
-        #MaintainCourses_Menu(self.Frame_Obj, db_connection, self.SelectedCourse_obj, self.edited_text, self.entryWidget_list, self, child_window)
 
     def open_excel_window(self):
+        """Opens a new TK window, which contains a dialog to import/export data from/to
+        excel
+        """
+
         self.active_widgets_import_export = []
         self.excel_window = tk.Toplevel(self.child_window)
         self.excel_window_heading_frame = tk.Frame(self.excel_window)
@@ -139,6 +142,9 @@ class CourseInfo:
             self.check_buttons_list.append(tk.Checkbutton(self.excel_window_content_frame, text=column, variable=self.check_box_var_list[len(self.check_box_var_list)-1]))
 
         self.check_box_var_list.append(tk.IntVar())
+        self.check_buttons_list.append(tk.Checkbutton(self.excel_window_content_frame, text="Gesamtnote", variable=self.check_box_var_list[len(self.check_box_var_list)-1]))
+
+        self.check_box_var_list.append(tk.IntVar())
         self.check_buttons_list.append(tk.Checkbutton(self.excel_window_content_frame, text='Exportiere Notengewichtungsschaubild', variable=self.check_box_var_list[len(self.check_box_var_list)-1]))
 
 
@@ -185,14 +191,22 @@ class CourseInfo:
         self.excel_window_obj = excel_interact(self.file_name_var.get())
 
         dict_values_for_excel = {}
+        import_graph = 0
         # check which checkbox is ticked and write the column in dict:
-        for button_number, check_button_var in enumerate(self.check_box_var_list):
+        for button_number, check_button_var in enumerate(self.check_box_var_list[0:len(self.check_box_var_list)-1]):
             value = check_button_var.get()
             if value == 1:
                 dict_values_for_excel[self.check_buttons_list[button_number].cget('text')] = self.dict_view_mode[self.check_buttons_list[button_number].cget('text')]
 
-        self.excel_window_obj.create(dict_values_for_excel)
+        if self.check_box_var_list[len(self.check_buttons_list)-1].get() == 1:
+            #filename = self.build_distinct_file_name().split(".")[0]
+            #self.excel_window_obj.import_pie_chart_image(self.PieChart_obj, filename)
+            import_graph = 1
+
+        self.excel_window_obj.create(dict_values_for_excel, import_graph)
+        self.excel_window.destroy()
         os.system(f'libreoffice {self.file_name_var.get()}')
+
 
     def build_distinct_file_name(self):
         current_time = dt.datetime.now()
@@ -263,7 +277,7 @@ class CourseInfo:
         id_list = []
         forname_list = []
         surname_list = []
-        #pdb.set_trace()
+
         for student in self.student_ids_in_course:
             id_list.append(student[0])
             forname_list.append(student[1])
@@ -277,6 +291,7 @@ class CourseInfo:
         self.dict_view_mode['ID'] = id_list
         self.dict_view_mode['Vorname'] = forname_list
         self.dict_view_mode['Nachname'] = surname_list
+        self.dict_view_mode['Gesamtnote'] = []
 
         for key, value in self.dict_view_grades.items():
             self.dict_view_mode[f"{key},{self.grade_names[key]}"] = value
@@ -382,7 +397,7 @@ class CourseInfo:
 
                 # build a end_grade_dict, where the keys are the stud_id and the values are the end grade
                 self.dict_stud_id_end_grade[student[0]] = end_grade
-
+                self.dict_view_mode['Gesamtnote'].append(end_grade)
                 # create a tk image obj
                 remove_button_image = tk.PhotoImage(file=r"remove_button.gif")
 
@@ -404,24 +419,20 @@ class CourseInfo:
             self.no_students_in_course_label.grid(column=0, row=0)
             return [], []
 
-    def calc_end_grade_current_row(self, current_row):
-        pass
-
-
-    def calc_end_grade(self):
-        for current_row, student_id in enumerate(self.student_ids_in_course):
-            if student_id in self.dict_student_grade_id_value.keys():
-                value_dict = self.dict_student_grade_id_value[student_id]
-
-                hallo = self.entryWidget_list[current_row]
-                end_grade = 0
-                for i, key_grade_id, value_grade_value in enumerate(value_dict.items()):
-                    end_grade = end_grade + float(self.dict_child_grade_id_matplotlib_obj[5].get_text()[0:len(self.dict_child_grade_id_matplotlib_obj[5].get_text())-1])/100*value_grade_value
-        row_pos = 1
-        # for key_stud_id, value_dict in self.dict_student_grade_id_value.items():
-        #
-        #
-        #     row_pos = row_pos + 1
+    # def calc_end_grade_current_row(self, current_row):
+    #     pass
+    #
+    #
+    # def calc_end_grade(self):
+    #     for current_row, student_id in enumerate(self.student_ids_in_course):
+    #         if student_id in self.dict_student_grade_id_value.keys():
+    #             value_dict = self.dict_student_grade_id_value[student_id]
+    #
+    #             hallo = self.entryWidget_list[current_row]
+    #             end_grade = 0
+    #             for i, key_grade_id, value_grade_value in enumerate(value_dict.items()):
+    #                 end_grade = end_grade + float(self.dict_child_grade_id_matplotlib_obj[5].get_text()[0:len(self.dict_child_grade_id_matplotlib_obj[5].get_text())-1])/100*value_grade_value
+    #     row_pos = 1
 
 
     def remove_stud_from_course(self, row_index):
