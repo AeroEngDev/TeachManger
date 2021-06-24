@@ -1,0 +1,6 @@
+numpy
+matplotlib
+pycryptodome
+pycryptodomex
+openpyxl
+backports.pbkdf2
