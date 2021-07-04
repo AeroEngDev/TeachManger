@@ -10,10 +10,6 @@ class DB_con:
         except:
             pass
 
-        self.CreateStudentsTable()
-        self.CreateTableAllCourses()
-        self.CreateTableCalenderEntries()
-
     def __del__(self):
         self.conn.close()
 
@@ -78,6 +74,24 @@ class DB_con:
         # self.c.execute("CREATE TABLE IF NOT EXISTS GradeStruct (CourseID INTEGER NOT NULL, gradeCount INTEGER NOT NULL DEFAULT '2', grade1_weight FLOAT DEFAULT '0.666', grade2_weight FLOAT DEFAULT '0.333')")
         # self.c.execute("CREATE TABLE IF NOT EXISTS GradeNames (CourseID INTEGER NOT NULL, grade1_Name STRING, grade2_Name STRING)")
 
+    def CreateTableSingleCourse(self, course_id):
+        pass
+        # sql_string = f"""CREATE TABLE IF NOT EXISTS [{course_id}]
+        # (student_id INTEGER,
+        # grade_1_value INTEGER DEFAULT '',
+        # grade_1_name STRING DEFAULT 'Neue Note',
+        # grade_1_child_of STRING DEFAULT 'none',
+        # grade_1_weight INTEGER DEFAULT '0.2',
+        # grade_2_value INTEGER DEFAULT '',
+        # grade_2_name STRING DEFAULT 'Neue Note',
+        # grade_2_child_of STRING DEFAULT 'none',
+        # grade_2_weight INTEGER DEFAULT '0.2',
+        # Notes STRING,
+        # FOREIGN KEY(student_id) REFERENCES Students(student_id)
+        # )"""
+        # pdb.set_trace()
+        # self.c.execute(sql_string)
+        #self.conn.commit()
 
     def CreateTableCalenderEntries(self):
         sql = """CREATE TABLE IF NOT EXISTS CalenderEntries (entry_id INTEGER, entry_name TEXT, date Date,

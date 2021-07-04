@@ -37,6 +37,7 @@ class Course:
             sql = "SELECT course_id FROM Courses WHERE course_name = ? AND year = ? AND contact_name = ? AND notes = ?"
             Ausgabe = db_conn.GetFromDatabase(sql, params)
             self.CourseID = Ausgabe[0][0]
+            db_conn.CreateTableSingleCourse(self.CourseID)
         else:
             print(f'Kurs {CourseName} ist schon vorhanden!')
 

@@ -33,8 +33,7 @@ class PieChart:
 
         self.outer_pie_objs = [(), ()]
         global photo
-        #pdb.set_trace()
-        photo = tk.PhotoImage(file="img/plus_button.gif")
+        photo = tk.PhotoImage(file="plus_button.gif")
 
 
         self.GET_grade_data()

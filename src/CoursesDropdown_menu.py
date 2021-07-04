@@ -31,8 +31,8 @@ class CoursesDropdown_menu:
         self.drop_down_heading_frame = tk.Frame(self.DropdownMenuFrame, width=self.current_display_size[0]/2, height=50)
         self.dropdown_heading_label = ttk.Label(self.DropdownMenuFrame, text='Ausgewählter Kurs', style="My.TLabel")
         self.dropdown_heading_label.grid(column=0, row=0, sticky='n')
-        #pdb.set_trace()
-        self.drop_down_frame_canvas = tk.Canvas(self.DropdownMenuFrame, width=int(self.current_display_size[0]/2))
+
+        self.drop_down_frame_canvas = tk.Canvas(self.DropdownMenuFrame, width=self.current_display_size[0]/2)
         self.drop_down_frame_canvas.grid(column=0, row=1, sticky='nw')
         # create a horizontal scrollbar for the course info Frame:
         self.dropdown_hscrollbar = tk.Scrollbar(self.DropdownMenuFrame, orient=tk.HORIZONTAL, command=self.drop_down_frame_canvas.xview)

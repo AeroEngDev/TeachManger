@@ -14,17 +14,15 @@ from work_with_encryption import work_with_crypto
 class init:
 
     def __init__(self, parent_window, content_frame):
-        self.create_database_window = None
         self.parent_window = parent_window
         self.content_frame = content_frame
         self.pos_in_msg = 0
         self.msg_check_for_dir = tk.Label(self.content_frame, text='Überprüfe database Ordner...')
         self.msg_check_for_dir.grid(column=0, row=self.pos_in_msg)
         # check if database dir exists:
-        output = subprocess.getstatusoutput("ls -la | grep database| grep d")
+        output = subprocess.getstatusoutput("ls -la | grep database")
 
-
-        if output[0] == 0:
+        if output[1][0] == 'd':
             self.msg_found_dir = tk.Label(self.content_frame, text='database Ordner gefunden...')
             self.pos_in_msg += 1
             self.msg_found_dir.grid(column=0, row=self.pos_in_msg)
@@ -34,7 +32,6 @@ class init:
             self.pos_in_msg += 1
             self.msg_no_dir.grid(column=0, row=self.pos_in_msg)
             os.system('mkdir database')
-            self.check_for_db_files()
 
     def check_for_db_files(self):
         os.chdir('database/')
@@ -56,7 +53,7 @@ class init:
         self.msg_check_for_db_in_dir.grid(column=0, row=self.pos_in_msg)
 
         databases = self.check_dbs_in_pwd()
-        #pdb.set_trace()
+
         if len(databases) == 1:
             self.msg_found_one_db = tk.Label(self.content_frame, text='Es wurde genau eine Datenbank gefunden. Es wird geprüft, ob sie verschlüsselt ist')
             self.pos_in_msg += 1
@@ -90,7 +87,6 @@ class init:
 
 
         else:
-            #pdb.set_trace()
             self.msg_no_db_found = tk.Label(self.content_frame, text='Es konnte keine Datenbank gefunden werden...')
             self.pos_in_msg += 1
             self.msg_no_db_found.grid(column=0, row=self.pos_in_msg)
@@ -118,10 +114,10 @@ class init:
         # setup assistent for new database
         self.create_database_window = tk.Toplevel()
         style = ttk.Style(self.create_database_window)
-        #style.configure("TLabel_setup_window", font=('Arial', 25))
+        style.configure("My.TLabel_setup_window", font=('Arial', 25))
         self.setup_heading_frame = tk.Frame(self.create_database_window)
         self.setup_heading_frame.grid(column=0, row=0)
-        self.heading_label = tk.Label(self.setup_heading_frame, text='Neue Datenbank erstellen')
+        self.heading_label = ttk.Label(self.setup_heading_frame, text='Neue Datenbank erstellen', style="My.TLabel_setup_window")
         self.heading_label.grid(column=0, row=0)
         self.setup_content_frame = tk.Frame(self.create_database_window)
         self.setup_content_frame.grid(column=0, row=1)
@@ -141,9 +137,9 @@ class init:
         self.database_name_entry_var = tk.StringVar()
         # set a default database name containing the current date and time to make the name unique
         self.current_datetime = dt.datetime.now()
-        self.current_datetime_str = self.current_datetime.strftime("%d%m%Y_%H%M")
-        self.database_name_str = f"Datenbank_{self.current_datetime_str}.db"
-        self.database_name_entry_var.set(self.database_name_str)
+        self.current_datetime_str = current_datetime.strftime("%d%m%Y_%H%M")
+        self.database_name_str = f"Datenbank_{current_datetime_str}.db"
+        self.database_name_entry_var.set(database_name_str)
 
         self.database_name_entry_widget = tk.Entry(self.setup_content_frame, textvariable=self.database_name_entry_var)
         self.database_name_entry_widget.grid(column=1, row=3)
@@ -152,7 +148,7 @@ class init:
         self.encrypt_checkbutton_var.set(0)
         self.encrypt_checkbutton = tk.Checkbutton(self.setup_content_frame, text="Verschlüsseln?", variable=self.encrypt_checkbutton_var, onvalue=1, offvalue=0, command=self.password_widget)
         self.encrypt_checkbutton.grid(column=1, row=4)
-        #pdb.set_trace()
+
         # self.password_label = tk.Label(self.setup_content_frame, text='Verschlüsselungs-Passwort')
         #
         # self.password_entry_var = tk.StringVar()
@@ -160,8 +156,6 @@ class init:
 
         self.submit_button = tk.Button(self.setup_content_frame, text='Abschicken', command=self.submit_new_db)
         self.submit_button.grid(column=1, row=5)
-
-
 
     def password_widget(self):
         if self.encrypt_checkbutton_var.get() == 1:
@@ -171,8 +165,7 @@ class init:
 
 
     def check_dbs_in_pwd(self):
-        databases_str = subprocess.getstatusoutput('ls | grep .db')
-
+        databases_str = subprocess.getstatusoutput('find *.db')
         # reg_exp_new_line = re.compile(r'[\S]+(.db)|[\S]+(.enc)')
         # pdb.set_trace()
         # return re.findall(reg_exp_new_line, databases_str[1])
@@ -199,9 +192,8 @@ class init:
                     self.create_database_window.lift()
                     return
             else:
-                self.crypto_obj = work_with_crypto(new_db_name, self.content_frame, self.pos_in_msg)
+                self.crypto_obj = work_with_crypto(new_db_name, self.treeview_messages, self.pos_in_msg)
                 self.pos_in_msg = self.crypto_obj.get_row_counter()
         else:
-            self.crypto_obj = work_with_crypto(new_db_name, self.content_frame, self.pos_in_msg)
+            self.crypto_obj = work_with_crypto(new_db_name, self.treeview_messages, self.pos_in_msg)
             self.pos_in_msg = self.crypto_obj.get_row_counter()
-            self.create_database_window.destroy()

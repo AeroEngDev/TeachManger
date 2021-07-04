@@ -44,7 +44,7 @@ class Calender:
         self.show_next_events()
 
         # insert the plus button for the creation of a new event:
-        photo = tk.PhotoImage(file="img/plus_button.gif")
+        photo = tk.PhotoImage(file="plus_button.gif")
         self.plus_button = tk.Button(self.heading_frame, image=photo, command=self.create_new_event)
         self.plus_button.image = photo
         self.plus_button.grid(column=0, row=0)

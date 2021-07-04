@@ -33,22 +33,22 @@ class CourseInfo:
         self.course_info_heading_frame = tk.Frame(self.CourseInfoFrame, relief=tk.SUNKEN, bd=1, width=current_display_size[0]/2)
         self.course_info_heading_frame.grid(column=0, row=0, sticky='n')
 
-        photo = tk.PhotoImage(file="img/plus_button.gif")
+        photo = tk.PhotoImage(file="plus_button.gif")
         self.plus_button = tk.Button(self.course_info_heading_frame, image=photo, command=self.Start_AddPart)
         self.plus_button.image = photo
         self.plus_button.grid(column=1, row=0)
 
-        view_mode_photo = tk.PhotoImage(file="img/switch_to_view_mode.gif")
+        view_mode_photo = tk.PhotoImage(file="switch_to_view_mode.gif")
         self.view_mode_button = tk.Button(self.course_info_heading_frame, image=view_mode_photo, command=self.click_view_mode_button)
         self.view_mode_button.image = view_mode_photo
         self.view_mode_button.grid(column=2, row=0)
 
-        edit_mode_photo = tk.PhotoImage(file="img/edit_pictogram.gif")
+        edit_mode_photo = tk.PhotoImage(file="edit_pictogram.gif")
         self.edit_mode_button = tk.Button(self.course_info_heading_frame, image=edit_mode_photo, command=self.click_edit_mode_button)
         self.edit_mode_button.image = edit_mode_photo
 
         # Button for exporting the sheet to excel
-        export_excel_photo = tk.PhotoImage(file="img/excel_export.gif")
+        export_excel_photo = tk.PhotoImage(file="excel_export.gif")
         self.excel_export_button = tk.Button(self.course_info_heading_frame, text="Excel", command=self.open_excel_window, image=export_excel_photo)
         self.excel_export_button.image = export_excel_photo
         self.excel_export_button.grid(column=3, row=0)

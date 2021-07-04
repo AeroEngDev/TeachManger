@@ -12,17 +12,13 @@ from Calender import Calender
 import pdb
 
 def get_display_size():
-    root = tkinter.Tk()
+    root = tk.Tk()
     root.update_idletasks()
     root.attributes('-fullscreen', True)
     root.state('iconic')
     height = root.winfo_screenheight()
     width = root.winfo_screenwidth()
     root.destroy()
-    if width > 1920:
-        width = 1920
-    if height > 1080:
-        height = 1080
     return (width, height)
 
 
@@ -30,7 +26,7 @@ def ManageCourses(db_connection, root):
 
     # get screen size:
     current_display_size = get_display_size()
-    pdb.set_trace()
+
     root1 = tk.Toplevel(root)
     style = ttk.Style(root1)
     style.configure("My.TLabel", font=('Arial', 25))
